@@ -113,7 +113,7 @@ public class PoiRepository {
         args.add(size);
         args.add(offset);
         return jdbc.query(SELECT_SUMMARY + where + " ORDER BY p.updated_at DESC, p.id LIMIT ? OFFSET ?",
-                this::mapSummary, args.toArray());
+                (rs, row) -> mapSummary(rs), args.toArray());
     }
 
     public long count(PoiCategory category, Double[] bbox, String progress) {
@@ -124,7 +124,8 @@ public class PoiRepository {
     }
 
     public Optional<PoiSummary> findSummary(UUID poiId) {
-        return jdbc.query(SELECT_SUMMARY + " WHERE p.deleted_at IS NULL AND p.id = ?", this::mapSummary, poiId)
+        return jdbc.query(SELECT_SUMMARY + " WHERE p.deleted_at IS NULL AND p.id = ?",
+                        (rs, row) -> mapSummary(rs), poiId)
                 .stream().findFirst();
     }
 
