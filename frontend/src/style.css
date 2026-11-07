@@ -71,3 +71,41 @@ fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap
 @media (max-width: 900px) { .login-layout { grid-template-columns: 1fr; min-height: 0; }.login-intro { padding-top: 0; }.map-lines { display: none; }.task-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }.account-row { grid-template-columns: repeat(2,minmax(0,1fr)); }.account-row fieldset { grid-column: 1 / -1; } }
 @media (max-width: 600px) { .masthead { gap: 8px; padding: 12px 20px; flex-wrap: wrap; }.brand { font-size: 23px; }.top-nav { width: 100%; order: 3; gap: 20px; }.top-nav a { padding: 9px 0; }.session { gap: 4px; }.session-name { max-width: 70px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }.page-wrap { padding-top: 29px; }.login-intro h1 { font-size: 39px; }.login-intro p { font-size: 15px; }.login-card { padding: 24px; }.task-grid, .admin-form, .account-row { grid-template-columns: 1fr; }.task-card { min-height: 225px; }.details div { grid-template-columns: 1fr; gap: 3px; }.footer span:last-child { display: none; } }
 @media (prefers-reduced-motion: reduce) { .task-card { transition: none; } }
+
+/* M2 POI 采集与地图 */
+select, textarea { width: 100%; padding: 12px 14px; border: 1px solid #becfca; border-radius: 7px; background: #fff; color: #1b3030; font: inherit; }
+textarea { resize: vertical; min-height: 88px; }
+.poi-collect { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.poi-panel { padding: 26px; }
+.poi-panel h2 { font-size: 24px; margin-bottom: 18px; }
+.photo-picker { gap: 8px; }
+.photo-picker input[type='file'] { padding: 10px; border: 1px dashed #a9c2b8; border-radius: 7px; background: #f7faf7; }
+.photo-previews { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+.photo-previews img { width: 108px; height: 108px; object-fit: cover; border-radius: 9px; border: 1px solid #dbe6de; }
+.ocr-box { border: 1px solid #e0e9e2; border-radius: 9px; padding: 14px; background: #f8fbf8; display: grid; gap: 8px; }
+.ocr-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.poi-toolbar { display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end; padding: 20px; margin-bottom: 22px; }
+.poi-toolbar-actions { display: flex; gap: 10px; }
+.poi-layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
+.poi-map { padding: 22px; }
+.poi-map-head { display: grid; gap: 6px; margin-bottom: 12px; }
+.poi-scatter { width: 100%; height: auto; border-radius: 10px; }
+.poi-scatter-bg { fill: #f2f7f2; stroke: #dbe7dd; }
+.poi-grid { stroke: #e2ece4; stroke-width: .4; }
+.poi-dot { fill: #2f8f76; }
+.poi-dot-error { fill: #c9603a; }
+.poi-results { display: grid; gap: 12px; }
+.poi-row { padding: 18px 20px; display: grid; gap: 6px; }
+.poi-row:hover { border-color: #7db1a0; }
+.poi-row-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.poi-row p { margin: 0; }
+.badge { display: inline-block; padding: 2px 9px; border-radius: 999px; background: #eaf3ef; color: #1d6a58; font-size: 12px; font-weight: 700; }
+.badge-muted { background: #f0f2ef; color: #6a7a76; }
+.badge-error { background: #fdeee7; color: #a8512c; }
+.badge-current { background: #e7f0fb; color: #2b5b93; }
+.poi-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; margin-bottom: 34px; }
+.poi-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.poi-actions .inline-link { margin: 0; }
+.poi-revisions h2 { margin: 26px 0 16px; }
+.poi-revision { margin-bottom: 14px; }
+@media (max-width: 900px) { .poi-collect, .poi-layout, .poi-detail, .poi-toolbar { grid-template-columns: 1fr; } .poi-toolbar-actions { justify-content: flex-start; } }

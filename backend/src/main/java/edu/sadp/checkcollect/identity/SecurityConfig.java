@@ -20,7 +20,7 @@ public class SecurityConfig {
     SecurityFilterChain security(HttpSecurity http, IdentityRepository users) throws Exception {
         http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.GET, "/", "/index.html", "/login", "/password", "/account", "/admin/users", "/poi", "/review", "/messages", "/assets/**", "/favicon.ico").permitAll()
+                .requestMatchers(HttpMethod.GET, "/", "/index.html", "/login", "/password", "/account", "/admin/users", "/poi/**", "/review", "/messages", "/assets/**", "/favicon.ico").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/api/auth/wechat/status", "/api/auth/wechat/start", "/api/auth/wechat/callback").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers("/error").permitAll()
