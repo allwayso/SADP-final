@@ -5,6 +5,10 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/checkcollect}
     username: ${DATABASE_USER:checkcollect}
     password: ${DATABASE_PASSWORD:checkcollect}
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 24MB
 server:
   port: ${SERVER_PORT:8080}
   servlet:
@@ -17,6 +21,12 @@ server:
 app:
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+  photo:
+    dir: ${PHOTO_DIR:./data/photos}
+  map:
+    provider: ${MAP_PROVIDER:stub}
+  ocr:
+    provider: ${OCR_PROVIDER:stub}
   wechat:
     app-id: ${WECHAT_APP_ID:}
     app-secret: ${WECHAT_APP_SECRET:}
