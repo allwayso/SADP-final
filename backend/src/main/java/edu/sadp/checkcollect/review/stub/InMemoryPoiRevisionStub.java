@@ -41,6 +41,12 @@ public class InMemoryPoiRevisionStub implements PoiRevisionPort {
     }
 
     @Override
+    public synchronized Optional<PoiRevision> latestRevision(String poiId) {
+        List<String> ids = revisionsByPoi.get(poiId);
+        return ids == null ? Optional.empty() : Optional.of(revisions.get(ids.get(ids.size() - 1)));
+    }
+
+    @Override
     public synchronized PoiRevision createRevision(RevisionDraft draft) {
         String poiId = draft.poiId() == null ? "poi-" + UUID.randomUUID() : draft.poiId();
         if (draft.purpose() != RevisionPurpose.NEW && !revisionsByPoi.containsKey(poiId)) {

@@ -18,6 +18,9 @@ public interface PoiRevisionPort {
     /** 每个 POI 当前的最新采集版本，用于计算待检列表。 */
     List<PoiRevision> latestRevisions();
 
+    /** 指定 POI 的最新采集版本；核验只针对最新版本，防止旧版本与新内容混淆。 */
+    Optional<PoiRevision> latestRevision(String poiId);
+
     /**
      * 创建新的采集版本。M3 只以 {@link RevisionPurpose#CORRECTION}（整改）和
      * {@link RevisionPurpose#FIELD_CHECK}（第三方现场采集）调用，调用前已完成身份与任务校验。
