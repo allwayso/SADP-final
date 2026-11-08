@@ -5,6 +5,9 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/checkcollect}
     username: ${DATABASE_USER:checkcollect}
     password: ${DATABASE_PASSWORD:checkcollect}
+  flyway:
+    # 各模块按编号区段放迁移脚本（M1 V1–V99，M2 V200+，M3 V300+，M4 V400+），允许分支乱序合入
+    out-of-order: true
 server:
   port: ${SERVER_PORT:8080}
   servlet:
@@ -21,3 +24,7 @@ app:
     app-id: ${WECHAT_APP_ID:}
     app-secret: ${WECHAT_APP_SECRET:}
     redirect-uri: ${WECHAT_REDIRECT_URI:}
+  review:
+    # M2、M4 尚未接入前，M3 使用自带的内存桩；对应模块提供真实适配器后设为 false
+    poi-stub: ${REVIEW_POI_STUB:true}
+    notification-stub: ${REVIEW_NOTIFICATION_STUB:true}
