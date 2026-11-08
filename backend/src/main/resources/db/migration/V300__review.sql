@@ -40,6 +40,8 @@ ALTER TABLE review_records ADD CONSTRAINT review_records_issue_fk FOREIGN KEY (i
 -- 错误单处理历史：建立、补充说明、整改、驳回、确认、撤回、异议与裁定均留痕，不修改既有记录
 CREATE TABLE review_issue_events (
   id UUID PRIMARY KEY,
+  -- 同一事务内多条记录的 NOW() 相同，用序号保证历史顺序
+  seq BIGSERIAL NOT NULL UNIQUE,
   issue_id UUID NOT NULL REFERENCES review_issues(id),
   actor_id UUID NOT NULL REFERENCES app_users(id),
   action VARCHAR(24) NOT NULL,
@@ -49,7 +51,7 @@ CREATE TABLE review_issue_events (
   note VARCHAR(2000),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX review_issue_events_issue_idx ON review_issue_events(issue_id, created_at);
+CREATE INDEX review_issue_events_issue_idx ON review_issue_events(issue_id, seq);
 
 -- 异议单：当事一方在沟通无果后提交，每张错误单最多一次（最终裁定不可再次修改）
 CREATE TABLE review_disputes (
