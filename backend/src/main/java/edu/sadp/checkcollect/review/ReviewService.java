@@ -85,9 +85,11 @@ public class ReviewService {
         Names names = new Names(identity);
         List<PoiRevision> latest = pois.latestRevisions();
         Set<String> reviewed = repository.reviewedRevisionIds(latest.stream().map(PoiRevision::id).toList());
+        Set<String> settled = repository.settledRevisionIds(latest.stream().map(PoiRevision::id).toList());
         Set<String> busy = repository.poisWithActiveIssue(latest.stream().map(PoiRevision::poiId).toList());
         List<PendingReview> pending = latest.stream()
                 .filter(revision -> !reviewed.contains(revision.id()))
+                .filter(revision -> !settled.contains(revision.id()))
                 .filter(revision -> !busy.contains(revision.poiId()))
                 .filter(revision -> revision.purpose() != RevisionPurpose.FIELD_CHECK)
                 .filter(revision -> !reviewer.id().equals(revision.submittedBy()))

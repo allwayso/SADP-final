@@ -126,6 +126,22 @@ public class ReviewRepository {
     }
 
     /**
+     * 已由错误单流程处理完毕的版本（错误单已解决或已关闭时确认的版本）。
+     * 这些版本不再进入待检，避免整改确认或撤回后重复核验同一版本。
+     */
+    public Set<String> settledRevisionIds(Collection<String> revisionIds) {
+        if (revisionIds.isEmpty()) return Set.of();
+        MapSqlParameterSource params = new MapSqlParameterSource("ids", revisionIds);
+        return Set.copyOf(named.queryForList("""
+                SELECT current_revision_id AS revision_id FROM review_issues
+                 WHERE status IN ('RESOLVED', 'CLOSED') AND current_revision_id IN (:ids)
+                UNION
+                SELECT final_revision_id AS revision_id FROM review_issues
+                 WHERE status IN ('RESOLVED', 'CLOSED') AND final_revision_id IN (:ids)""",
+                params, String.class));
+    }
+
+    /**
      * 按参与人与状态筛选错误单。{@code userId} 为空时不按参与人筛选（管理员视图）。
      * 第三方工作人员通过其分配任务看到对应错误单。
      */
