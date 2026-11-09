@@ -13,7 +13,7 @@ Linux 笔记本运行 CachyOS x86_64，Intel i5-8250U，约 8 GB 内存。Docker
 | RabbitMQ | `rabbitmq:4-management` | 健康检查通过，通知队列有 1 个消费者 |
 | PaddleOCR | `sadp-final-ocr:96b6f32` | 健康检查通过，实际图片识别成功 |
 
-应用只发布到 `127.0.0.1:8080`，其余服务没有发布宿主机端口。公网通过 Cloudflare HTTPS 临时隧道进入应用，`SESSION_COOKIE_SECURE=true`。应用容器设置为故障或主机重启后恢复运行；隧道由用户级 systemd 管理，已启用该用户的 linger。
+应用只发布到 `127.0.0.1:8080`，其余服务没有发布宿主机端口。公网通过 Cloudflare 命名隧道进入应用，正式入口为 **https://collect.allwayso.top/login**，`SESSION_COOKIE_SECURE=true`。应用容器设置为故障或主机重启后恢复运行；固定隧道由用户级 systemd 管理，已启用该用户的 linger。
 
 ## 文件与账号
 
@@ -24,7 +24,9 @@ Linux 笔记本运行 CachyOS x86_64，Intel i5-8250U，约 8 GB 内存。Docker
 | `~/.local/share/sadp-deploy` | 本机部署材料目录，权限 700 |
 | `~/.local/share/sadp-deploy/compose.offline.yaml` | 固定镜像标签的 Compose 覆盖文件 |
 | `~/.local/share/sadp-deploy/accounts.json` | 四个联调账号的独立密码与用户 ID，权限 600 |
-| `~/.local/share/sadp-deploy/public-url.txt` | 本次 HTTPS 临时入口 |
+| `~/.local/share/sadp-deploy/public-url.txt` | 当前正式 HTTPS 入口 |
+| `~/.local/share/sadp-deploy/fixed-tunnel.yml` | 命名隧道及 hostname 到本机应用的路由配置 |
+| `~/.cloudflared` | Cloudflare 授权证书和隧道私有凭据，不加入版本控制 |
 
 `member-a` 为管理员和采集者，`member-b` 为采集者，`member-c` 为核验者，`member-d` 为第三方工作人员。四个账号均已通过首次改密流程，使用不同密码和不同用户 ID。Windows 试用环境与本次 Linux 环境的账号密码分别保存。
 
@@ -48,8 +50,8 @@ docker compose -p sadp-final -f compose.deploy.yaml -f "$HOME/.local/share/sadp-
 隧道状态与日志：
 
 ```sh
-systemctl --user status checkcollect-tunnel.service
-journalctl --user -u checkcollect-tunnel.service --no-pager -n 100
+systemctl --user status checkcollect-fixed-tunnel.service
+journalctl --user -u checkcollect-fixed-tunnel.service --no-pager -n 100
 ```
 
 本次 Linux 连接 Docker Hub 超时，采用本机构建、镜像归档、SHA-256 校验后离线导入的方式部署。OCR 模型缓存也已预置。更新应用时需要重新构建镜像并同步标签，不能仅拉取源码后继续使用旧镜像。
@@ -67,10 +69,12 @@ journalctl --user -u checkcollect-tunnel.service --no-pager -n 100
 
 完整业务流程的既有集成测试与联调记录见 [integration-status.md](integration-status.md)。本次部署验收不重复声称已在 Linux 上重新执行全部业务回归。
 
-## 尚待外部配置
+## 固定域名与后续配置
 
-临时隧道地址在重新创建隧道后可能变化。更换地址后需同步更新 `.env` 的 `FRONTEND_BASE_URL` 和本机 `public-url.txt`，再重新创建应用容器。笔记本需保持开机、联网并避免自动睡眠。
+固定隧道名称为 `sadp-final`，发布的 hostname 为 `collect.allwayso.top`，回源地址为 `http://127.0.0.1:8080`，其他 hostname 返回 404。固定隧道已建立四条到 Cloudflare 的连接。隧道重启不改变正式域名；笔记本仍需保持开机、联网并避免自动睡眠。
 
-`collect.allwayso.top` 尚未绑定到固定入口。目前域名由 DNSPod 托管；如采用 Cloudflare 命名隧道，需要先完成用户 Cloudflare 账号、域名接入与 DNS 配置，再替换临时隧道服务。该步骤尚未执行。
+域名注册和续费仍由腾讯云管理，权威 DNS 已切换到 Cloudflare 分配的 `monroe.ns.cloudflare.com` 和 `piers.ns.cloudflare.com`。`collect` 的代理 CNAME 已指向命名隧道。应用的 `FRONTEND_BASE_URL` 已更新为 `https://collect.allwayso.top`，旧临时隧道已停用。
 
-真实微信登录仍需网站应用的 AppID、AppSecret、授权回调域及绑定验收。固定域名配置完成后，应同步检查高德域名限制和微信回调配置。
+已在正式域名下重新验证四个账号的身份、权限和退出限制，以及实际浏览器登录、Secure/HttpOnly Cookie、高德底图和临时点位、PaddleOCR 识别与 390 px 手机页面。地图点位仍仅由测试浏览器临时提供，没有写入数据库。
+
+`WECHAT_REDIRECT_URI` 已配置为 `https://collect.allwayso.top/api/auth/wechat/callback`。真实微信登录仍需网站应用的 AppID、AppSecret、平台授权回调域及绑定验收；仅配置域名和回调 URL 不会自动启用扫码登录。
