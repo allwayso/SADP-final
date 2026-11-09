@@ -1,0 +1,106 @@
+/* M4 消息与交流模块样式。通用布局与配色沿用 style.css，这里只补充模块类。 */
+
+.msg-page .small { font-size: 13px; color: #6a7c78; line-height: 1.55; }
+.msg-page code { background: #eef4ef; border: 1px solid #dbe7df; border-radius: 4px; padding: 1px 5px; font-size: 12px; }
+
+.msg-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.msg-tabs button { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 18px; border: 1px solid #cfdcd5; border-radius: 999px; background: #fff; color: #4f6662; font-weight: 700; font-size: 14px; }
+.msg-tabs button.active { background: #176d5b; border-color: #176d5b; color: #fff; }
+.tab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 19px; height: 19px; padding: 0 6px; border-radius: 10px; background: #d56f48; color: #fff; font-size: 11px; line-height: 1; }
+.tab-count { color: inherit; opacity: .7; font-size: 12px; font-weight: 600; }
+
+.msg-notifications { padding: 8px 26px 20px; }
+.msg-section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0 12px; border-bottom: 1px solid #e6ece7; }
+.msg-section-head strong { display: block; font-size: 16px; }
+.msg-section-head small { display: block; color: #71827e; font-size: 12px; margin-top: 3px; }
+.msg-section-head .text-button { color: #176d5b; font-weight: 700; }
+.msg-section-head .text-button:disabled { color: #a7b4b0; cursor: default; }
+
+.msg-notification-list { list-style: none; margin: 0; padding: 0; }
+.msg-notification { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 16px; padding: 18px 0; border-bottom: 1px solid #edf1ec; }
+.msg-notification:last-child { border-bottom: 0; }
+.msg-notification.unread { position: relative; }
+.msg-notification.unread:before { content: ''; position: absolute; left: -14px; top: 24px; width: 6px; height: 6px; border-radius: 50%; background: #d56f48; }
+.msg-kind { align-self: start; justify-self: start; padding: 4px 9px; border-radius: 5px; background: #eef4f0; color: #2f6b5b; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.msg-kind[data-kind='ANNOUNCEMENT'] { background: #fdf0e6; color: #a65a30; }
+.msg-kind[data-kind='ISSUE_RAISED'] { background: #fdecea; color: #a33d33; }
+.msg-kind[data-kind='FIELD_TASK'] { background: #eaf0fb; color: #375f9e; }
+.msg-kind[data-kind='FINAL_RESULT'] { background: #eaf5ee; color: #176b56; }
+.msg-notification-title { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.msg-notification-title strong { font-size: 15px; }
+.msg-notification-title time { flex: none; color: #8a9995; font-size: 12px; }
+.msg-notification.unread .msg-notification-title strong { color: #123f36; }
+.msg-notification-text { margin: 6px 0 8px; color: #4f6460; font-size: 14px; }
+.msg-notification-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; font-size: 12px; color: #7b8b87; }
+.msg-notification-meta .inline-link { margin: 0; font-size: 12px; }
+.msg-notification-meta .text-button { padding: 0; font-size: 12px; color: #176d5b; font-weight: 700; }
+.msg-read-state { color: #9aa8a4; }
+.msg-empty { padding: 28px 4px; color: #71827e; }
+.msg-empty p { margin: 0 0 6px; }
+.msg-empty.small { padding: 18px 4px; }
+.msg-pager { display: flex; align-items: center; justify-content: center; gap: 18px; padding-top: 16px; border-top: 1px solid #e6ece7; font-size: 13px; color: #60736e; }
+.msg-pager .secondary-button { min-height: 36px; padding: 6px 14px; }
+
+.msg-chat-layout { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.msg-conversations { padding: 6px 14px 14px; max-height: 640px; overflow-y: auto; }
+.msg-conversation { display: grid; gap: 2px; width: 100%; text-align: left; padding: 12px 12px 13px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #2b4240; }
+.msg-conversation + .msg-conversation { margin-top: 2px; }
+.msg-conversation:hover { background: #f3f8f4; }
+.msg-conversation.active { background: #eef6f1; border-color: #b9d4c8; }
+.msg-conversation-kind { color: #9a6b49; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.msg-conversation strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-conversation small { color: #7b8b87; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-chat { display: flex; flex-direction: column; min-height: 620px; max-height: 720px; }
+.msg-chat-head { padding: 20px 24px 14px; border-bottom: 1px solid #e6ece7; }
+.msg-chat-head h2 { margin: 4px 0 4px; font-size: 26px; }
+.msg-members { margin: 0; color: #7b8b87; font-size: 12px; }
+.msg-messages { flex: 1; min-height: 240px; overflow-y: auto; padding: 18px 24px; display: flex; flex-direction: column; gap: 14px; }
+.msg-message { max-width: 78%; padding: 10px 14px; border-radius: 10px; background: #f4f7f3; border: 1px solid #e4ebe4; }
+.msg-message.own { align-self: flex-end; background: #eaf4ee; border-color: #cfe3d8; }
+.msg-message-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 3px; }
+.msg-message-head strong { font-size: 12px; color: #2f5b50; }
+.msg-message-head time { color: #94a29e; font-size: 11px; }
+.msg-message p { margin: 0; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg-composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end; padding: 14px 24px 20px; border-top: 1px solid #e6ece7; }
+.msg-composer textarea { width: 100%; resize: vertical; min-height: 48px; max-height: 160px; padding: 10px 12px; border: 1px solid #becfca; border-radius: 7px; font: inherit; color: #1b3030; }
+.msg-composer textarea:focus-visible { outline: 3px solid #268d77; outline-offset: 2px; }
+
+.msg-stub { margin-top: 24px; padding: 4px 24px 10px; }
+.msg-stub summary { display: flex; align-items: baseline; gap: 12px; padding: 16px 0; cursor: pointer; list-style: none; }
+.msg-stub summary::-webkit-details-marker { display: none; }
+.msg-stub summary:before { content: '▸'; color: #9a6b49; font-size: 13px; }
+.msg-stub[open] summary:before { content: '▾'; }
+.msg-stub summary span { font-weight: 700; font-family: 'Barlow Condensed', 'Microsoft YaHei', sans-serif; font-size: 20px; }
+.msg-stub summary small { color: #7b8b87; font-size: 12px; }
+.msg-stub-body { padding-bottom: 12px; }
+.msg-stub-body > .small { max-width: 860px; }
+.msg-scenarios { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 14px 0 12px; }
+.msg-scenarios .secondary-button { flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; min-height: 58px; }
+.msg-scenarios .secondary-button small { color: #71827e; font-weight: 500; font-size: 12px; }
+.msg-stub-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 14px; }
+.msg-diagnostics { width: 100%; border-collapse: collapse; font-size: 12px; }
+.msg-diagnostics th { text-align: left; padding: 7px 8px; border-bottom: 1px solid #dfe7df; color: #71827e; font-weight: 600; }
+.msg-diagnostics td { padding: 7px 8px; border-bottom: 1px solid #edf1ec; vertical-align: top; }
+.msg-diagnostics tr:last-child td { border-bottom: 0; }
+.msg-diagnostics .text-button { padding: 0; color: #176d5b; font-size: 12px; }
+.msg-status { padding: 2px 7px; border-radius: 4px; font-weight: 700; white-space: nowrap; }
+.msg-status[data-status='DELIVERED'] { background: #eaf5ee; color: #176b56; }
+.msg-status[data-status='PENDING'] { background: #eef2f9; color: #375f9e; }
+.msg-status[data-status='FAILED'] { background: #fff0ec; color: #9a332b; }
+
+@media (max-width: 900px) {
+  .msg-chat-layout { grid-template-columns: 1fr; }
+  .msg-conversations { max-height: 280px; }
+  .msg-chat { min-height: 520px; }
+  .msg-notification { grid-template-columns: 1fr; gap: 8px; }
+  .msg-notification.unread:before { top: 22px; left: -12px; }
+}
+@media (max-width: 600px) {
+  .msg-notifications { padding: 6px 18px 16px; }
+  .msg-notification-title { flex-direction: column; gap: 3px; }
+  .msg-chat { min-height: 460px; }
+  .msg-chat-head, .msg-messages, .msg-composer { padding-left: 16px; padding-right: 16px; }
+  .msg-message { max-width: 92%; }
+  .msg-composer { grid-template-columns: 1fr; }
+  .msg-stub { padding: 4px 16px 8px; }
+}

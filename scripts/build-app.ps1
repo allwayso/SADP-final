@@ -1,4 +1,4 @@
-$repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+﻿$repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Push-Location (Join-Path $repo 'frontend')
 try { npm ci; if ($LASTEXITCODE -ne 0) { throw 'npm ci 失败' }; npm run build; if ($LASTEXITCODE -ne 0) { throw '前端构建失败' } }
 finally { Pop-Location }

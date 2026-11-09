@@ -1,4 +1,4 @@
-$repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+﻿$repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $config = Join-Path $repo '.env'
 if (-not (Test-Path -LiteralPath $config)) {
     throw '请先复制 .env.example 为 .env 并填写本地配置。'

@@ -1,0 +1,5 @@
+# PaddleX 3.0 uses the LangChain 0.3 module layout.
+langchain==0.3.27
+langchain-community==0.3.27
+langchain-openai==0.3.27
+huggingface-hub==0.36.0

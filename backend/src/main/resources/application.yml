@@ -5,6 +5,19 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/checkcollect}
     username: ${DATABASE_USER:checkcollect}
     password: ${DATABASE_PASSWORD:checkcollect}
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 24MB
+  flyway:
+    # 各模块按编号区段放迁移脚本（M1 V1–V99，M2 V200+，M3 V300+，M4 V400+），允许分支乱序合入
+    out-of-order: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    connection-timeout: ${RABBITMQ_CONNECTION_TIMEOUT:3s}
 server:
   port: ${SERVER_PORT:8080}
   servlet:
@@ -17,7 +30,29 @@ server:
 app:
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+  photo:
+    dir: ${PHOTO_DIR:./data/photos}
+  map:
+    provider: ${MAP_PROVIDER:stub}
+  ocr:
+    provider: ${OCR_PROVIDER:stub}
   wechat:
     app-id: ${WECHAT_APP_ID:}
     app-secret: ${WECHAT_APP_SECRET:}
     redirect-uri: ${WECHAT_REDIRECT_URI:}
+  review:
+    # M2、M4 尚未接入前，M3 使用自带的内存桩；对应模块提供真实适配器后设为 false
+    poi-stub: ${REVIEW_POI_STUB:false}
+    notification-stub: ${REVIEW_NOTIFICATION_STUB:false}
+    # 打开 POI 桩时是否写入演示 POI（沿用 APP_SEED_DEMO 的开关，单独设为 false 可关闭）
+    demo-data: ${REVIEW_DEMO_DATA:${APP_SEED_DEMO:false}}
+  messaging:
+    # rabbit：使用 RabbitMQ；in-process：不启动中间件，直接调用同一套幂等投递逻辑（本地联调）。
+    transport: ${MESSAGING_TRANSPORT:rabbit}
+    exchange: ${MESSAGING_EXCHANGE:checkcollect.notifications}
+    queue: ${MESSAGING_QUEUE:checkcollect.notifications.delivery}
+    routing-key: ${MESSAGING_ROUTING_KEY:notification}
+    retry-interval-ms: ${MESSAGING_RETRY_INTERVAL_MS:15000}
+    max-attempts: ${MESSAGING_MAX_ATTEMPTS:20}
+    # 开发消息桩（模拟 B/C 调用），生产环境设为 false。
+    stub-enabled: ${MESSAGING_STUB_ENABLED:false}
