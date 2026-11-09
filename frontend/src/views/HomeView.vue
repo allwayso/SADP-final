@@ -2,7 +2,7 @@
 import { user } from '../api'
 const tasks = [
   { role: 'COLLECTOR', title: 'POI 采集与地图', description: '提交照片和位置，查看地图上的点位与处理进展。', path: '/poi', label: '进入采集' },
-  { role: 'REVIEWER', title: '核验与异议处理', description: '核查新数据，标记问题并跟进整改或异议。', path: '/review', label: '进入核验' },
+  { role: '', title: '核验与异议处理', description: '核查新数据，标记问题并跟进整改、驳回或异议。', path: '/review', label: '进入核验' },
   { role: '', title: '消息与交流', description: '查看系统通知，与相关人员讨论现场问题。', path: '/messages', label: '查看消息' },
 ]
 </script>
@@ -15,7 +15,6 @@ const tasks = [
         <span class="task-icon" aria-hidden="true">◎</span><h2>{{ task.title }}</h2><p>{{ task.description }}</p><span class="task-link">{{ task.label }} <span aria-hidden="true">↗</span></span>
       </RouterLink>
     </section>
-    <RouterLink v-if="user?.roles.includes('FIELD_WORKER') && !user.roles.includes('REVIEWER')" class="inline-link" to="/review">查看第三方现场任务 →</RouterLink>
     <RouterLink v-if="user?.roles.includes('ADMIN')" class="inline-link" to="/admin/users">管理团队账号 →</RouterLink>
   </div>
 </template>

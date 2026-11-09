@@ -15,6 +15,7 @@ async function signOut() {
       <RouterLink to="/" class="brand"><span class="brand-mark">◎</span><span>check<span class="brand-accent">@</span>collect</span></RouterLink>
       <nav v-if="user && !user.mustChangePassword" class="top-nav" aria-label="主导航">
         <RouterLink to="/">工作台</RouterLink>
+        <RouterLink to="/review">核验与异议</RouterLink>
         <RouterLink to="/account">我的账号</RouterLink>
         <RouterLink v-if="user.roles.includes('ADMIN')" to="/admin/users">用户管理</RouterLink>
       </nav>

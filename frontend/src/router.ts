@@ -6,6 +6,7 @@ import PasswordView from './views/PasswordView.vue'
 import AccountView from './views/AccountView.vue'
 import AdminView from './views/AdminView.vue'
 import ModuleView from './views/ModuleView.vue'
+import ReviewView from './views/ReviewView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,7 +16,7 @@ const router = createRouter({
     { path: '/account', component: AccountView },
     { path: '/admin/users', component: AdminView, meta: { role: 'ADMIN' } },
     { path: '/poi', component: ModuleView, props: { title: 'POI 采集与地图', owner: '成员 B' }, meta: { role: 'COLLECTOR' } },
-    { path: '/review', component: ModuleView, props: { title: '核验与异议处理', owner: '成员 C' }, meta: { roles: ['REVIEWER', 'FIELD_WORKER'] } },
+    { path: '/review', component: ReviewView, meta: { roles: ['REVIEWER', 'FIELD_WORKER', 'ADMIN', 'COLLECTOR'] } },
     { path: '/messages', component: ModuleView, props: { title: '消息与交流', owner: '成员 D' } },
     { path: '/', component: HomeView },
     { path: '/:pathMatch(.*)*', redirect: '/' },
