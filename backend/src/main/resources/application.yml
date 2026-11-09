@@ -28,3 +28,5 @@ app:
     # M2、M4 尚未接入前，M3 使用自带的内存桩；对应模块提供真实适配器后设为 false
     poi-stub: ${REVIEW_POI_STUB:true}
     notification-stub: ${REVIEW_NOTIFICATION_STUB:true}
+    # 打开 POI 桩时是否写入演示 POI（沿用 APP_SEED_DEMO 的开关，单独设为 false 可关闭）
+    demo-data: ${REVIEW_DEMO_DATA:${APP_SEED_DEMO:false}}
