@@ -161,11 +161,12 @@ async function assign() {
       </section>
 
       <div class="revision-grid">
-        <RevisionCard title="被标识的版本" :revision="detail.flaggedRevision" />
+        <RevisionCard title="被标识的版本" :revision="detail.flaggedRevision" :submitted-by="issue.collector" />
         <RevisionCard
           v-if="detail.currentRevision && detail.currentRevision.id !== detail.flaggedRevision?.id"
           title="当前整改版本"
           :revision="detail.currentRevision"
+          :submitted-by="issue.collector"
         />
         <RevisionCard v-if="detail.finalRevision" title="最终有效版本" :revision="detail.finalRevision" />
       </div>
