@@ -19,6 +19,7 @@ import edu.sadp.checkcollect.review.ReviewViews.IssueActionRequest;
 import edu.sadp.checkcollect.review.ReviewViews.IssueDetail;
 import edu.sadp.checkcollect.review.ReviewViews.IssueView;
 import edu.sadp.checkcollect.review.ReviewViews.Page;
+import edu.sadp.checkcollect.review.ReviewViews.PendingReview;
 import edu.sadp.checkcollect.review.ReviewViews.ReviewHistory;
 import edu.sadp.checkcollect.review.ReviewViews.ReviewRecordView;
 import edu.sadp.checkcollect.review.ReviewViews.ReviewRequest;
@@ -79,17 +80,19 @@ public class ReviewService {
     // =====================================================================
 
     /** 待检列表：每个 POI 的最新版本中，尚未核验、没有未关闭错误单、且不是本人提交的记录。 */
-    public Page<PoiRevision> pending(int page, int size) {
+    public Page<PendingReview> pending(int page, int size) {
         UserAccount reviewer = identity.requireRole(Role.REVIEWER);
+        Names names = new Names(identity);
         List<PoiRevision> latest = pois.latestRevisions();
         Set<String> reviewed = repository.reviewedRevisionIds(latest.stream().map(PoiRevision::id).toList());
         Set<String> busy = repository.poisWithActiveIssue(latest.stream().map(PoiRevision::poiId).toList());
-        List<PoiRevision> pending = latest.stream()
+        List<PendingReview> pending = latest.stream()
                 .filter(revision -> !reviewed.contains(revision.id()))
                 .filter(revision -> !busy.contains(revision.poiId()))
                 .filter(revision -> revision.purpose() != RevisionPurpose.FIELD_CHECK)
                 .filter(revision -> !reviewer.id().equals(revision.submittedBy()))
                 .sorted(Comparator.comparing(PoiRevision::createdAt))
+                .map(revision -> new PendingReview(revision, names.ref(revision.submittedBy())))
                 .toList();
         int from = Math.min(page * size, pending.size());
         return new Page<>(pending.subList(from, Math.min(from + size, pending.size())), page, size);

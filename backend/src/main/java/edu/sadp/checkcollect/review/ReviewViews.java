@@ -43,6 +43,9 @@ public final class ReviewViews {
     public record ReviewRecordView(UUID id, String poiId, String revisionId, UserRef reviewer,
                                    ReviewModels.Outcome outcome, UUID issueId, Instant createdAt) {}
 
+    /** 待检项：待核验的采集版本及其提交人，核验页面可直接展示，无需再查身份服务。 */
+    public record PendingReview(PoiRevision revision, UserRef collector) {}
+
     public record IssueView(UUID id, String poiId, String flaggedRevisionId, String currentRevisionId,
                             String finalRevisionId, IssueStatus status, String description, UserRef collector,
                             UserRef reviewer, Instant createdAt, Instant updatedAt, Instant closedAt) {}
