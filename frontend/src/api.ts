@@ -23,7 +23,7 @@ async function csrfToken(): Promise<string> {
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const method = options.method?.toUpperCase() ?? 'GET'
   const headers = new Headers(options.headers)
-  if (options.body) headers.set('Content-Type', 'application/json')
+  if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json')
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) headers.set('X-XSRF-TOKEN', await csrfToken())
   const response = await fetch(`/api${path}`, { ...options, headers, credentials: 'same-origin' })
   if (response.status === 401) user.value = null

@@ -1,0 +1,75 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    mem_limit: 1536m
+    env_file: .env
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/checkcollect
+      DATABASE_USER: checkcollect
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: checkcollect
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD}
+      PHOTO_DIR: /app/photos
+      PADDLE_OCR_URL: http://ocr:8000/ocr
+      REVIEW_POI_STUB: "false"
+      REVIEW_NOTIFICATION_STUB: "false"
+      REVIEW_DEMO_DATA: "false"
+      MESSAGING_STUB_ENABLED: "false"
+      MESSAGING_TRANSPORT: rabbit
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - photos:/app/photos
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    mem_limit: 768m
+    environment:
+      POSTGRES_DB: checkcollect
+      POSTGRES_USER: checkcollect
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checkcollect -d checkcollect"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  rabbitmq:
+    image: rabbitmq:4-management
+    restart: unless-stopped
+    mem_limit: 768m
+    environment:
+      RABBITMQ_DEFAULT_USER: checkcollect
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD}
+    volumes:
+      - rabbit_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+  ocr:
+    build: ./ocr
+    restart: unless-stopped
+    mem_limit: 2500m
+    volumes:
+      - ocr_models:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 20s
+      timeout: 5s
+      start_period: 300s
+      retries: 10
+volumes:
+  postgres_data:
+  rabbit_data:
+  photos:
+  ocr_models:
