@@ -16,3 +16,5 @@
 
 - [Linux 部署与验收](deployment-linux.md)：Docker、真实服务集成、高德、PaddleOCR、HTTPS 和持久化。
 - [四模块集成记录](integration-status.md)：修复对应、测试结果和部署待验收项。
+
+- [微信交接部署教程](wechat-teammate-deployment.md)：给 Linux 部署同学的逐步更新、配置、平台限制、验收及回滚说明。
