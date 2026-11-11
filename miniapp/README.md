@@ -46,3 +46,12 @@ powershell -File scripts/wechat-preview.ps1 -Ticket <32位ticket>
 在开发者工具模拟器中，用户点击确认后，后端使用真实 wx.login code 向微信换取身份，原会话 consume 返回 HTTP 409「请先用团队账号登录并绑定微信」。此错误发生在身份核验之后的本地绑定查询，证明确认请求已经到达同一本机后端并获得微信身份；不等于绑定或登录已完成。未保存微信 code、openid、session_key 或 access_token 到仓库。
 
 本轮使用独立 8081 端口，连接已有本机开发数据库，未更新 Linux 正式环境。当前本机初始 admin 仍要求改密；必须先按应用流程完成首次改密并登录，再发起 BIND，不能用未绑定的 LOGIN 流程声称绑定成功。
+
+## 2026-11-11 21:23 本机绑定与重新登录闭环通过
+
+1. 本机 member-a 按正常密码接口完成首次改密，测试密码仅保存在忽略提交的 .env.wechat-local-accounts.json。
+2. 已登录的原浏览器会话创建 BIND 请求，用户在开发者工具小程序确认；后端真实换取微信身份并消费请求，返回 complete、wechatBound=true。
+3. 原会话调用 logout，另建未登录会话创建 LOGIN 请求，用户再次确认。
+4. 后端返回 complete；使用新会话读取 /api/me 得到 member-a，用户 ID 与绑定时相同，ADMIN、COLLECTOR 角色一致。
+
+范围：微信真实身份、数据库绑定、退出后重新建立会话已验证；确认端为开发者工具模拟器和配对码，不是手机正式扫码验收。微信 getwxacodeunlimit 的 85412 限制仍存在，Linux 正式部署尚未更新。不得将本记录表述为公众扫码入口已经可用。

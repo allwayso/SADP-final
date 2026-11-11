@@ -11,7 +11,7 @@ Page({
     this.setData({ message: '请填写网页上显示的十二位配对码。' })
   },
   onPairingInput(event) {
-    this.setData({ pairing: (event.detail.value || '').trim().toUpperCase() })
+    this.setData({ pairing: (event.detail.value || '').trim().toUpperCase(), done: false, message: '' })
   },
   confirm() {
     const ticket = this.data.ticket
