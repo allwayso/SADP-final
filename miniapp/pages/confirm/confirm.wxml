@@ -2,6 +2,10 @@
   <view class="title">check@collect</view>
   <view>请确认这是你在电脑上发起的登录或绑定请求。</view>
   <view>如果不是你本人操作，请直接关闭。</view>
-  <button type="primary" bindtap="confirm" loading="{{busy}}" disabled="{{busy || !ticket || done}}">确认微信身份</button>
+  <view wx:if="{{!ticket}}" class="pairing">
+    <view>网页上的十二位配对码：</view>
+    <input type="text" maxlength="12" value="{{pairing}}" bindinput="onPairingInput" placeholder="例如 A1B2C3D4E5F6" />
+  </view>
+  <button type="primary" bindtap="confirm" loading="{{busy}}" disabled="{{busy || done}}">确认微信身份</button>
   <view>{{message}}</view>
 </view>

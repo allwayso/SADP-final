@@ -1,16 +1,26 @@
 Page({
-  data: { ticket: '', busy: false, done: false, message: '' },
+  data: { ticket: '', pairing: '', busy: false, done: false, message: '' },
   onLoad(options) {
     let ticket = ''
     try { ticket = decodeURIComponent(options.scene || options.ticket || '') } catch (_) {}
-    if (!/^[a-f0-9]{32}$/.test(ticket)) {
-      this.setData({ message: '请求无效，请回到网站重新发起扫码。' })
+    if (/^[a-f0-9]{32}$/.test(ticket)) {
+      this.setData({ ticket })
       return
     }
-    this.setData({ ticket })
+    // 生码受限时改用网页上的十二位配对码，静态预览码也能完成确认
+    this.setData({ message: '请填写网页上显示的十二位配对码。' })
+  },
+  onPairingInput(event) {
+    this.setData({ pairing: (event.detail.value || '').trim().toUpperCase() })
   },
   confirm() {
-    if (!this.data.ticket || this.data.busy || this.data.done) return
+    const ticket = this.data.ticket
+    const pairing = this.data.pairing
+    if (this.data.busy || this.data.done) return
+    if (!ticket && !/^[a-f0-9]{12}$/i.test(pairing)) {
+      this.setData({ message: '请填写十二位配对码。' })
+      return
+    }
     this.setData({ busy: true, message: '' })
     wx.login({
       success: ({ code }) => {
@@ -18,11 +28,14 @@ Page({
         wx.request({
           url: getApp().globalData.apiBase + '/api/auth/wechat/mini/confirm',
           method: 'POST',
-          data: { ticket: this.data.ticket, code },
+          data: { ticket: ticket || null, pairing: ticket ? null : pairing, code },
           success: res => {
             if (res.statusCode === 200) {
               this.setData({ done: true, busy: false, message: '微信身份已确认，请回到原网站完成操作。' })
-            } else { this.fail('确认失败或请求已过期，请回网站重新扫码。') }
+            } else {
+              const detail = res.data && res.data.message ? '：' + res.data.message : ''
+              this.fail('确认失败或请求已过期' + detail + '，请回网站重新发起。')
+            }
           },
           fail: () => this.fail('无法连接网站，请核对网络与服务器域名配置。')
         })

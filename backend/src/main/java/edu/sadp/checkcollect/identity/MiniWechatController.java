@@ -3,6 +3,7 @@ package edu.sadp.checkcollect.identity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Instant;
+import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,14 +32,15 @@ public class MiniWechatController {
     private static final int TICKET_LIMIT = 1000;
     private static final long TICKET_TTL_SECONDS = 300;
 
+    private final SecureRandom random = new SecureRandom();
     private final MiniWechatClient client;
     private final IdentityService identity;
     private final SessionLogin login;
     private final Map<String, Ticket> tickets = new ConcurrentHashMap<>();
 
-    private record Ticket(String sessionId, UUID userId, Instant expires, String openId) {
+    private record Ticket(String sessionId, UUID userId, Instant expires, String pairing, String openId) {
         Ticket confirmed(String value) {
-            return new Ticket(sessionId, userId, expires, value);
+            return new Ticket(sessionId, userId, expires, pairing, value);
         }
     }
 
@@ -73,37 +75,43 @@ public class MiniWechatController {
         if (tickets.size() >= TICKET_LIMIT) throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "请求过多");
 
         String ticket = UUID.randomUUID().toString().replace("-", "");
+        String pairing = pairingCode();
         String image = "";
         String warning = null;
         try {
             byte[] qr = client.qr(ticket);
             image = "data:image/png;base64," + Base64.getEncoder().encodeToString(qr);
         } catch (ResponseStatusException error) {
-            // 平台拒绝生码时保留原因，页面据此改用开发者工具预览码联调
+            // 平台拒绝生码时保留原因，页面据此改用开发者工具预览码或配对码联调
             warning = error.getReason();
         }
-        tickets.put(ticket, new Ticket(sessionId, userId, Instant.now().plusSeconds(TICKET_TTL_SECONDS), null));
+        tickets.put(ticket, new Ticket(sessionId, userId, Instant.now().plusSeconds(TICKET_TTL_SECONDS), pairing, null));
 
         Map<String, String> result = new HashMap<>();
         result.put("ticket", ticket);
+        result.put("pairing", pairing);
         result.put("image", image);
         if (warning != null) result.put("warning", warning);
         return result;
     }
 
-    /** 小程序确认页调用：用 wx.login 的 code 换取 openid，并绑定到已存在的 ticket。 */
+    /**
+     * 小程序确认页调用：用 wx.login 的 code 换取 openid，并绑定到已存在的请求。
+     * 生码被平台拒绝时，小程序可以用网页显示的十二位配对码代替 ticket，流程不变。
+     */
     @PostMapping("/confirm")
     public void confirm(@RequestBody(required = false) ConfirmRequest body) {
         if (body == null || body.code() == null || body.code().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少微信登录凭证");
         }
-        Ticket initial = valid(body.ticket());
+        String ticketId = resolveTicketId(body.ticket(), body.pairing());
+        Ticket initial = valid(ticketId);
         if (initial.openId() != null) throw new ResponseStatusException(HttpStatus.CONFLICT, "该请求已确认");
         String openId = client.openId(body.code());
         synchronized (this) {
-            Ticket current = valid(body.ticket());
-            if (current != initial) throw new ResponseStatusException(HttpStatus.CONFLICT, "该请求已确认");
-            tickets.put(body.ticket(), current.confirmed(openId));
+            Ticket current = valid(ticketId);
+            if (current != initial || current.openId() != null) throw new ResponseStatusException(HttpStatus.CONFLICT, "该请求已确认");
+            tickets.put(ticketId, current.confirmed(openId));
         }
     }
 
@@ -136,15 +144,45 @@ public class MiniWechatController {
         Ticket ticket = id == null ? null : tickets.get(id);
         if (ticket == null || !ticket.expires().isAfter(Instant.now())) {
             if (id != null) tickets.remove(id);
-            throw new ResponseStatusException(HttpStatus.GONE, "二维码已过期，请重新获取");
+            throw new ResponseStatusException(HttpStatus.GONE, "二维码或配对码已过期，请重新获取");
         }
         return ticket;
+    }
+
+    /** 允许小程序用 ticket 或十二位配对码定位同一条请求。 */
+    private String resolveTicketId(String ticket, String pairing) {
+        if (ticket != null && !ticket.isBlank()) return ticket;
+        if (pairing == null || !pairing.matches("[A-Fa-f0-9]{12}")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请填写网页上的十二位配对码");
+        }
+        return tickets.entrySet().stream()
+                .filter(entry -> pairing.equalsIgnoreCase(entry.getValue().pairing()))
+                .filter(entry -> entry.getValue().expires().isAfter(Instant.now()))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.GONE, "配对码无效或已过期，请回网站重新获取"));
+    }
+
+    /** 生成当前未被占用的十二位配对码，避免同时等待的两个浏览器互串。 */
+    private String pairingCode() {
+        Set<String> used = new java.util.HashSet<>();
+        for (Ticket item : tickets.values()) {
+            if (item.expires().isAfter(Instant.now())) used.add(item.pairing());
+        }
+        for (int attempt = 0; attempt < 50; attempt++) {
+            byte[] bytes = new byte[6];
+            random.nextBytes(bytes);
+            String code = java.util.HexFormat.of().withUpperCase().formatHex(bytes);
+            if (!used.contains(code)) return code;
+        }
+        throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "当前等待的登录请求过多");
     }
 
     public record CreateRequest(String purpose) {
     }
 
-    public record ConfirmRequest(String ticket, String code) {
+    /** {@code code} 为 wx.login 返回的临时凭证；{@code ticket} 与 {@code pairing} 二选一。 */
+    public record ConfirmRequest(String ticket, String pairing, String code) {
     }
 
     public record ConsumeRequest(String ticket) {
