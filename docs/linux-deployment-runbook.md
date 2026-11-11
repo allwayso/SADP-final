@@ -81,7 +81,7 @@ journalctl --user -u checkcollect-fixed-tunnel.service --no-pager -n 100
 
 ## 2026-11-11 采集授权与导航更新
 
-应用更新镜像为 `sadp-final-app:location-nav-20261111`，OCR 镜像仍为 `sadp-final-ocr:96b6f32`。部署覆盖文件的 app 标签随之更新，启动命令保持不变。该版本不包含数据库迁移，不修改已有照片和业务记录。
+应用更新镜像为 `sadp-final-app:location-nav-20261111`，应用源码为 `19caa3f`，OCR 镜像仍为 `sadp-final-ocr:96b6f32`。部署覆盖文件的 app 标签随之更新，启动命令保持不变。该版本不包含数据库迁移，不修改已有照片和业务记录。
 
 采集者的“新增采集”入口在列表为空时仍可见。采集、整改和现场采集均由用户先拍照或通过系统选择器选图，然后点击“授权并获取位置”；进入页面和选图不会自动定位，选图不会自动上传。换照片或离开页面会停止尚未完成的定位。已被浏览器记住的授权可能不再弹窗，应用不能强制系统重新询问。
 
@@ -89,4 +89,6 @@ journalctl --user -u checkcollect-fixed-tunnel.service --no-pager -n 100
 
 本地验证包括 20 个后端测试、6 个定位单元测试、生产构建，以及浏览器中的文件选择、拒绝定位、换图时取消定位、multipart 提交和异常起点确认。真实高德 SDK 对武汉/北京/东京样本完成交叉验证；在 1280 px 和 390 px 下调用真实路线服务，测试点返回步行 224 米/3 分钟及驾车 224 米/1 分钟。点位与设备位置由验收浏览器临时提供，没有写入业务数据库；真实手机的 GPS 精度和 App 调起仍需现场复测。
 
-实现依据见 [高德路径规划 URI](https://lbs.amap.com/api/uri-api/guide/travel/route)、[地点标注坐标参数](https://lbs.amap.com/api/uri-api/guide/point/marker)、[定位说明](https://lbs.amap.com/api/javascript-api-v2/guide/services/geolocation)和 [浏览器定位权限](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API)。坐标公式参考 eviltransform，许可证随应用保存在 `META-INF/eviltransform-LICENSE.txt`。
+正式域名下再次验证：四个账号的采集入口/路由权限正确，采集页进入和选图均未发起定位请求；使用浏览器临时位置读取已有 POI 的导航，站内真实步行路线返回 235 米/3 分钟，驾车返回 210 米/1 分钟。缺起点或非法 mode 返回 400；URI 目标坐标与现场调用的高德 SDK 结果偏差小于 1 米。390 px 页面无横向溢出。此次未提交采集、整改或现场裁定，没有修改原有业务记录。
+
+实现依据见 [高德路径规划 URI](https://lbs.amap.com/api/uri-api/guide/travel/route)、[地点标注坐标参数](https://lbs.amap.com/api/uri-api/guide/overview)、[定位说明](https://lbs.amap.com/api/javascript-api-v2/guide/services/geolocation)和 [浏览器定位权限](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API)。坐标公式参考 eviltransform，许可证随应用保存在 `META-INF/eviltransform-LICENSE.txt`。
