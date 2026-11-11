@@ -1,4 +1,6 @@
 import { api } from '../../api'
+export { locate } from './deviceLocation'
+export type { DeviceFix } from './deviceLocation'
 
 export type PoiCategory = 'HOUSE' | 'SHOP' | 'BUS_STOP' | 'PARK' | 'TREE' | 'SCENIC' | 'OTHER'
 export type Purpose = 'NEW' | 'CORRECTION' | 'FIELD_CHECK'
@@ -65,14 +67,6 @@ export type NavigationTarget = {
 
 export type OcrSuggestion = { text: string; suggestedCategory: PoiCategory | null; simulated: boolean }
 
-export type DeviceFix = {
-  lon: number
-  lat: number
-  accuracyMeters: number | null
-  locatedAt: string
-  crs: 'WGS84'
-}
-
 export const categories: { value: PoiCategory; label: string }[] = [
   { value: 'HOUSE', label: '房屋' },
   { value: 'SHOP', label: '商铺' },
@@ -137,12 +131,13 @@ export function getPoi(id: string): Promise<PoiDetail> {
   return api<PoiDetail>(`/pois/${id}`)
 }
 
-export function navigationTarget(id: string, from?: { lon: number; lat: number }): Promise<NavigationTarget> {
+export function navigationTarget(id: string, from: { lon: number; lat: number }, mode: 'walk' | 'car' = 'walk'): Promise<NavigationTarget> {
   const params = new URLSearchParams()
   if (from) {
     params.set('fromLon', String(from.lon))
     params.set('fromLat', String(from.lat))
   }
+  params.set('mode', mode)
   const query = params.toString()
   return api<NavigationTarget>(`/pois/${id}/navigation${query ? `?${query}` : ''}`)
 }
@@ -163,34 +158,4 @@ export function submitNewPoi(form: FormData): Promise<RevisionRef> {
 
 export function submitRevision(poiId: string, form: FormData): Promise<RevisionRef> {
   return upload<RevisionRef>(`/pois/${poiId}/revisions`, form)
-}
-
-function locationMessage(error: GeolocationPositionError): string {
-  switch (error.code) {
-    case error.PERMISSION_DENIED: return '定位被拒绝：请在浏览器设置中允许定位后重试，位置不能手动填写'
-    case error.POSITION_UNAVAILABLE: return '暂时无法取得定位：请到开阔处或打开系统定位后重试'
-    case error.TIMEOUT: return '定位超时：请重试，照片草稿会保留'
-    default: return '定位失败，请重试'
-  }
-}
-
-/** 由设备感知拍照位置，不经用户手工输入；坐标系为 WGS84。 */
-export function locate(timeout = 15000): Promise<DeviceFix> {
-  return new Promise((resolve, reject) => {
-    if (!('geolocation' in navigator)) {
-      reject(new Error('此设备或浏览器不支持定位，无法完成采集'))
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      position => resolve({
-        lon: Math.round(position.coords.longitude * 1e6) / 1e6,
-        lat: Math.round(position.coords.latitude * 1e6) / 1e6,
-        accuracyMeters: Number.isFinite(position.coords.accuracy) ? Math.round(position.coords.accuracy * 10) / 10 : null,
-        locatedAt: new Date(position.timestamp).toISOString(),
-        crs: 'WGS84',
-      }),
-      error => reject(new Error(locationMessage(error))),
-      { enableHighAccuracy: true, timeout, maximumAge: 0 },
-    )
-  })
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, reactive, ref } from 'vue'
 import type { CollectionInput } from './types'
-import { categories as poiCategories } from '../poi/api'
+import { categories as poiCategories, locate as locateDevice } from '../poi/api'
 
 const props = defineProps<{ submitLabel?: string; busy?: boolean; hint?: string }>()
 const emit = defineEmits<{ submit: [input: CollectionInput] }>()
@@ -15,8 +15,12 @@ const preview = ref('')
 const located = ref<{ latitude: number; longitude: number; accuracyMeters: number | null; locatedAt: string } | null>(null)
 const locating = ref(false)
 const message = ref('')
+let locationRequest = 0
+let locationController: AbortController | undefined
 
 onBeforeUnmount(() => {
+  ++locationRequest
+  locationController?.abort()
   if (preview.value) URL.revokeObjectURL(preview.value)
 })
 
@@ -24,44 +28,41 @@ function choosePhoto(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+  ++locationRequest
+  locationController?.abort()
+  locating.value = false
   if (preview.value) URL.revokeObjectURL(preview.value)
   preview.value = URL.createObjectURL(file)
   // 保留实际文件，直到整改或现场结果提交。
   files.value = [file]
   photoId.value = file.name
   located.value = null
-  void locate()
   message.value = ''
+  input.value = ''
 }
 
 async function locate() {
+  if (!files.value.length || locating.value) return
+  const request = ++locationRequest
+  const controller = new AbortController()
+  locationController = controller
   message.value = ''
-  if (!navigator.geolocation) {
-    message.value = '当前浏览器不支持设备定位，请更换设备后再采集'
-    return
-  }
   locating.value = true
   located.value = null
   try {
-    const position = await new Promise<GeolocationPosition>((resolve, reject) =>
-      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }))
+    const position = await locateDevice(15000, controller.signal)
+    if (request !== locationRequest) return
     located.value = {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
-      accuracyMeters: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
-      locatedAt: new Date().toISOString(),
+      latitude: position.lat,
+      longitude: position.lon,
+      accuracyMeters: position.accuracyMeters,
+      locatedAt: position.locatedAt,
     }
   } catch (cause) {
-    message.value = locateFailure(cause)
+    if (request === locationRequest) message.value = cause instanceof Error ? cause.message : '定位失败，请授权后重试'
   } finally {
-    locating.value = false
+    if (request === locationRequest) locating.value = false
   }
-}
-
-function locateFailure(cause: unknown): string {
-  const code = (cause as { code?: number } | null)?.code
-  const reason = code === 1 ? '定位权限被拒绝' : code === 2 ? '设备暂时无法取得位置' : code === 3 ? '定位超时' : '定位失败'
-  return `${reason}。请授权定位后重试；缺少位置的采集不能提交。`
 }
 
 function submit() {
@@ -76,7 +77,7 @@ function submit() {
     return
   }
   if (!located.value) {
-    message.value = '尚未取得设备定位，请先点击“获取定位”'
+    message.value = '尚未取得设备定位，请先点击“授权并获取位置”'
     return
   }
   emit('submit', {
@@ -111,14 +112,17 @@ function submit() {
           <span class="hint">WGS84 · 精度 {{ located.accuracyMeters === null ? '未知' : located.accuracyMeters.toFixed(0) + ' 米' }} · {{ new Date(located.locatedAt).toLocaleString('zh-CN', { hour12: false }) }}</span>
         </template>
         <span v-else class="hint">未定位。位置随照片由设备提供，不能手工填写。</span>
-        <button type="button" class="secondary-button" :disabled="locating" @click="locate">{{ locating ? '正在定位…' : located ? '重新定位' : '获取定位' }}</button>
+        <button type="button" class="secondary-button" :disabled="locating || !files.length" @click="locate">{{ locating ? '正在定位…' : located ? '重新获取位置' : '授权并获取位置' }}</button>
+        <span class="hint">先选择现场照片，再点击按钮请求定位；已授权时浏览器可能不再弹窗。</span>
+        <span v-if="located && (located.accuracyMeters === null || located.accuracyMeters > 100)" class="hint">当前定位精度较低，请到开阔处重试并核对位置。</span>
       </div>
       <div class="capture-box">
         <span class="capture-label">照片</span>
         <img v-if="preview" :src="preview" class="photo-preview" alt="待提交的照片预览" />
         <span v-else class="hint">尚未选择照片</span>
-        <input type="file" accept="image/*" capture="environment" @change="choosePhoto" />
-        <span class="hint">照片将随本次采集内容一起上传。</span>
+        <label>现场拍照<input type="file" accept="image/*" capture="environment" @change="choosePhoto" /></label>
+        <label>从相册或本机选图<input type="file" accept="image/*" @change="choosePhoto" /></label>
+        <span class="hint">系统选择窗口只授权读取选中的照片，提交后才上传。请在现场定位，旧照片不包含当前设备的拍摄位置。</span>
       </div>
     </div>
 

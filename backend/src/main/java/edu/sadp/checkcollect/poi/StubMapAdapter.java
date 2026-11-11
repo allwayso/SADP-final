@@ -19,7 +19,7 @@ public class StubMapAdapter implements MapAdapter {
     public boolean simulated() { return true; }
 
     @Override
-    public String urlFor(double fromLon, double fromLat, double toLon, double toLat) {
+    public String urlFor(double fromLon, double fromLat, double toLon, double toLat, String mode) {
         return String.format(Locale.ROOT,
                 "https://www.openstreetmap.org/?mlat=%.6f&mlon=%.6f#map=18/%.6f/%.6f",
                 toLat, toLon, toLat, toLon);

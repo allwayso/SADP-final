@@ -178,15 +178,23 @@ public class PoiService {
         }
     }
 
-    public NavigationTarget navigation(UUID poiId, Double fromLon, Double fromLat) {
+    public NavigationTarget navigation(UUID poiId, Double fromLon, Double fromLat, String mode) {
         identity.currentUser();
+        if (fromLon == null || fromLat == null || !Double.isFinite(fromLon) || !Double.isFinite(fromLat)
+                || Math.abs(fromLon) > 180 || Math.abs(fromLat) > 90) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请先授权定位以取得有效导航起点，不能用目标点代替起点");
+        }
+        if (mode == null || !List.of("walk", "car").contains(mode)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "出行方式只支持步行或驾车");
+        }
         PoiSummary poi = summary(poiId);
-        double originLon = fromLon == null ? poi.lon() : fromLon;
-        double originLat = fromLat == null ? poi.lat() : fromLat;
-        String url = map.urlFor(originLon, originLat, poi.lon(), poi.lat());
+        if (!"WGS84".equals(poi.crs())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "目标点坐标系不支持，请核对采集数据");
+        }
+        String url = map.urlFor(fromLon, fromLat, poi.lon(), poi.lat(), mode);
         String note = map.simulated()
                 ? "当前使用地图桩适配器：只能打开目标位置，未提供真实路线规划与导航。"
-                : "由地图平台提供路线与导航。";
+                : "核对起点后打开高德路线；手机可尝试调起高德 App。路线是否可用以地图平台结果为准。";
         return new NavigationTarget(map.provider(), map.simulated(), url, poi.lon(), poi.lat(), poi.crs(), note);
     }
 
