@@ -1,0 +1,34 @@
+@startuml
+!include common.puml
+left to right direction
+actor 采集者 as Collector
+actor 核验者 as Reviewer
+actor 第三方工作人员 as Worker
+actor 管理员 as Admin
+rectangle "check@collect" {
+  usecase "采集与补采\n照片 位置 分类 描述" as Capture
+  usecase "核验与标错\n整改复核" as Review
+  usecase "驳回与异议申请" as Dispute
+  usecase "现场核验与最终裁定" as Decide
+  usecase "分类地图与路线导航" as Map
+  usecase "系统通知 私聊\n采集者群 核验者群" as Chat
+  usecase "账号角色管理\n采集公告" as Manage
+  usecase "登录与个人微信绑定" as Login
+}
+Collector --> Capture
+Collector --> Dispute
+Collector --> Map
+Collector --> Chat
+Collector --> Login
+Reviewer --> Review
+Reviewer --> Dispute
+Reviewer --> Map
+Reviewer --> Chat
+Worker --> Decide
+Worker --> Map
+Admin --> Manage
+note right of Decide
+  仅被指派且非争议当事人的
+  第三方工作人员可以提交裁定
+end note
+@enduml

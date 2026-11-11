@@ -1,0 +1,11 @@
+skinparam defaultFontName Microsoft YaHei
+skinparam defaultFontSize 16
+skinparam shadowing false
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam roundCorner 0
+skinparam linetype ortho
+skinparam ArrowThickness 1
+skinparam padding 8
+skinparam packageStyle rectangle
+hide empty members

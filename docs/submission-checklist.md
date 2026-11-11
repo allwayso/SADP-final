@@ -6,11 +6,11 @@
 
 | 交付项 | 位置 | 当前状态 |
 | --- | --- | --- |
-| 架构一图二表 | architecture.md、assets/architecture.svg、assets/architecture.puml | 已有 |
+| 架构一图二表 | [综合实践报告 Word](《软件体系结构与设计模式》综合实践报告_2024302131052_徐晨帆.docx)、assets/architecture-report | 按课程模板完成 UML 图组、质量属性表、映射关系表 |
 | 源码与依赖锁定 | backend、frontend、ocr、Dockerfile、compose.deploy.yaml | 已有 |
 | 部署与运行说明 | deployment-linux.md、linux-deployment-runbook.md | 已有 |
 | 完整演示步骤 | demo-script.md | 已整理，待真实手机彩排 |
-| 分工内容与实际比例 | work-allocation.md | 待真实姓名、最终比例确认；计划比例不能冒充实际贡献 |
+| 分工内容与实际比例 | work-allocation.md、综合实践报告第四部分 | 姓名、学号及组长已确认；最终比例各 25%，合计 100% |
 | 设计模式对应说明 | design-patterns.md | 已整理现有实现；待确认课程指定模式 |
 
 ## 功能验收
