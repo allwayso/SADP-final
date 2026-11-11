@@ -1,0 +1,31 @@
+@startuml
+!include common.puml
+skinparam defaultFontSize 17
+top to bottom direction
+class ReviewService {
+  +correct()
+  +submitFieldResult()
+}
+interface PoiRevisionPort {
+  +getRevision()
+  +createRevision()
+  +setReviewSummary(...)
+}
+class PoiRevisionAdapter {
+  +createRevision()
+  +setReviewSummary(...)
+}
+class PoiService {
+  +submitNew()
+  +createFieldCheckRevision()
+}
+class IdentityService {
+  +currentUser()
+  +requireRole(role)
+}
+ReviewService -right-> PoiRevisionPort : 调用端口
+PoiRevisionPort <|.. PoiRevisionAdapter : 实现
+PoiRevisionAdapter -right-> PoiService : 委托
+ReviewService -down-> IdentityService : 校验身份
+PoiService -left-> IdentityService : 校验角色
+@enduml

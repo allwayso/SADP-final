@@ -1,0 +1,19 @@
+@startuml
+!include common.puml
+top to bottom direction
+skinparam defaultFontSize 19
+package "Web 页面\nVue 路由 登录态" as Web
+package "Spring Boot 单个应用进程" as Backend {
+  package "M3 review\n核验与异议" as Review
+  package "M2 poi\n采集与地图" as Poi
+  package "M4 messaging\n通知与聊天" as Messaging
+  package "M1 identity\n用户与角色" as Identity
+}
+Web .down.> Backend : HTTPS 四模块 API
+Review .right.> Poi : 版本端口
+Review .down.> Messaging : 通知端口
+Review .down.> Identity : 身份与角色
+Poi .down.> Messaging : 新数据通知
+Poi .down.> Identity : 采集权限
+Messaging .left.> Identity : 收件人及群成员
+@enduml

@@ -1,0 +1,24 @@
+@startuml
+!include common.puml
+skinparam sequenceMessageAlign center
+skinparam defaultFontSize 18
+skinparam padding 0
+hide footbox
+autonumber
+boundary 采集端 as Web
+control "M2\n采集服务" as Poi
+database PostgreSQL as DB
+control "M4\n通知服务" as Msg
+Web -> Web : 主动选图\n点击授权定位
+Web -> Poi : [内容齐全] POST\n照片 位置 分类 描述
+  Poi -> Poi : 身份 角色 输入检查
+  group 同一数据库事务
+    Poi -> DB : 新 POI 与版本元数据
+    Poi -> Msg : notifyRole(REVIEWER)
+    Msg -> DB : 通知及收件人快照
+    Poi -> DB : Spring 提交事务
+  end
+  Msg ->> Msg : 提交后向 RabbitMQ\n发布通知标识
+  Poi --> Web : POI 与版本标识
+  Msg -> DB : 幂等更新投递和收件状态
+@enduml

@@ -34,11 +34,11 @@
 
 ![PaddleOCR 实际识别](assets/integration-ocr-final.png)
 
-## 待部署环境验证
+## 部署进展与剩余验收（2026-11-11 更新）
 
-域名 allwayso.top 已由用户完成购买和审核。固定入口拟使用 collect.allwayso.top，DNS、HTTPS 隧道和 Linux 笔记本启动需在可访问该设备时配置。当前 Windows 本机应用入口为 http://localhost:8080。
+固定域名及 Linux 部署已完成，后续采集授权和路线功能也已更新，具体版本与实际验收范围以 [Linux 实际部署记录](linux-deployment-runbook.md) 为准。本文前述 Windows 联调结果不代表已经在 Linux 上重跑全部场景。
 
-微信网站应用的 AppID、AppSecret 和实际回调配置尚未完成本次联调。真实手机拍照/定位、微信绑定与扫码、手机导航跳转，以及 Linux 断电恢复仍需在设备与公网入口准备好后验收。自动化测试中的浏览器位置为测试坐标。
+真实微信网站应用配置及绑定/扫码登录尚缺验收。真实手机拍照、设备定位、手机导航跳转及断电恢复仍需实机确认；测试浏览器位置不能作为现场位置证据。
 
 开发数据库中 member-a 至 member-d 已分别修改初始密码，当前测试登录凭据保存在本机忽略提交的 .env.demo-accounts 文件。该文件和含高德配置的 .env 均应仅在本地保存。
 

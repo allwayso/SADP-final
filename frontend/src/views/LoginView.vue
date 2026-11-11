@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { login } from '../api'
+import MiniWechat from '../components/MiniWechat.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -47,6 +48,7 @@ async function submit() {
         <p v-if="error" class="error" role="alert">{{ error }}</p>
         <button class="primary-button full" :disabled="busy">{{ busy ? '正在登录…' : '登录' }}</button>
       </form>
+      <MiniWechat purpose="LOGIN" />
       <template v-if="wechatReady"><div class="divider"><span>或</span></div><a class="secondary-button full" href="/api/auth/wechat/start">用微信扫码登录</a><p class="small-note">首次使用微信，请先登录团队账号并在“我的账号”绑定。</p></template>
     </section>
   </div>

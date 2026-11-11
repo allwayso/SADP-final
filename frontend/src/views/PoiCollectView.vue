@@ -26,6 +26,7 @@ const ocrBusy = ref(false)
 const submitting = ref(false)
 const error = ref('')
 const notice = ref('')
+let ocrRequest = 0
 let locationRequest = 0
 let locationController: AbortController | undefined
 
@@ -37,6 +38,9 @@ function releasePreviews() {
 function onFiles(event: Event) {
   const input = event.target as HTMLInputElement
   if (!input.files?.length) return
+  ++ocrRequest
+  ocrBusy.value = false
+  notice.value = ''
   ++locationRequest
   locationController?.abort()
   locating.value = false
@@ -74,10 +78,12 @@ async function runOcr() {
     error.value = '请先拍摄或选择照片，再尝试识别招牌文字'
     return
   }
+  const request = ++ocrRequest
   ocrBusy.value = true
   error.value = ''
   try {
     const suggestion = await suggestFromPhoto(files.value[0])
+    if (request !== ocrRequest) return
     ocrSimulated.value = suggestion.simulated
     ocrText.value = suggestion.text ?? ''
     ocrCategory.value = suggestion.suggestedCategory
@@ -85,9 +91,9 @@ async function runOcr() {
       ? '文字识别平台未配置，本次为模拟入口，没有识别结果。'
       : '识别结果只作为建议，请确认后再提交。'
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '识别失败，可人工填写分类与描述'
+    if (request === ocrRequest) error.value = cause instanceof Error ? cause.message : '识别失败，可人工填写分类与描述'
   } finally {
-    ocrBusy.value = false
+    if (request === ocrRequest) ocrBusy.value = false
   }
 }
 
@@ -150,7 +156,7 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => { ++locationRequest; locationController?.abort(); releasePreviews() })
+onUnmounted(() => { ++ocrRequest; ++locationRequest; locationController?.abort(); releasePreviews() })
 </script>
 
 <template>

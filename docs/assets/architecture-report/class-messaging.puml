@@ -1,0 +1,21 @@
+@startuml
+!include common.puml
+skinparam defaultFontSize 17
+top to bottom direction
+class NotificationPublisher {
+  +publish()
+  +retryPending()
+}
+interface NotificationTransport {
+  +send()
+}
+class RabbitNotificationTransport {
+  +send()
+}
+class InProcessNotificationTransport {
+  +send()
+}
+NotificationPublisher -down-> NotificationTransport : 依赖抽象传输
+NotificationTransport <|.. RabbitNotificationTransport
+NotificationTransport <|.. InProcessNotificationTransport
+@enduml

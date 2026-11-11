@@ -2,7 +2,7 @@
 
 成员 B 负责 M2「POI 采集与地图」：拍照与自动定位、照片保存、分类与描述、采集版本；地图分类查询、错误与进展展示、路线导航入口；OCR 辅助。对应分工见 [四人分工说明](work-allocation.md)，接口边界见 [架构设计](architecture.md) 表二与第 7 节。
 
-代码位置：后端 `backend/src/main/java/edu/sadp/checkcollect/poi`，数据库迁移 `backend/src/main/resources/db/migration/V2__poi.sql`，前端 `frontend/src/modules/poi/api.ts` 与 `frontend/src/views/Poi*View.vue`。
+代码位置：后端 `backend/src/main/java/edu/sadp/checkcollect/poi`，数据库迁移 `backend/src/main/resources/db/migration/V200__poi.sql`，前端 `frontend/src/modules/poi/api.ts` 与 `frontend/src/views/Poi*View.vue`。
 
 ## 1. 与既有模块的关系
 
@@ -20,7 +20,7 @@
 | `MAP_PROVIDER` | `stub` | 地图适配器，当前只有桩实现 |
 | `OCR_PROVIDER` | `stub` | 文字识别适配器，当前只有桩实现 |
 
-启动时 Flyway 自动执行 `V2__poi.sql`，新增 `pois`、`poi_revisions`、`poi_photos`、`poi_review_summaries` 四张表。`spring.servlet.multipart` 上限调整为单张 8MB、单次请求 24MB，手机照片超过默认 1MB 时不需要额外改配置。
+启动时 Flyway 自动执行 `V200__poi.sql`，新增 `pois`、`poi_revisions`、`poi_photos`、`poi_review_summaries` 四张表。`spring.servlet.multipart` 上限调整为单张 8MB、单次请求 24MB，手机照片超过默认 1MB 时不需要额外改配置。
 
 手机通过局域网的 `http://<电脑IP>:5173` 访问时，浏览器通常禁止定位；演示建议用 `localhost`、HTTPS 或真机加 HTTPS 隧道，否则只能看到“定位被拒绝”的提示，这是浏览器限制，不是接口问题。
 
@@ -85,7 +85,7 @@ M2 只投递必要字段，不决定通知的存储与重试；通知抛异常�
 
 ## 8. 验收检查
 
-从空库启动，确认 `V2__poi.sql` 执行成功，四张表存在。
+从空库启动，确认 `V200__poi.sql` 执行成功，四张表存在。
 
 1. 用 `member-b` 账号（`COLLECTOR`）在手机或浏览器（允许定位）打开 `/poi/new`，拍照后位置自动出现，提交成功并跳转详情；换一个终端用同一账号查看，记录与照片都在。
 2. 拒绝定位权限后重试：页面停在采集页并提示定位被拒绝，草稿照片保留，无法提交。用 `curl` 直接提交缺 `lon` 的表单应返回 `400`。
