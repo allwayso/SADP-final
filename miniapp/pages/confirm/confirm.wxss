@@ -1,0 +1,1 @@
+.page { padding: 48rpx; line-height: 1.8; } .title { font-size: 48rpx; font-weight: bold; margin-bottom: 40rpx; } button { margin-top: 48rpx; }

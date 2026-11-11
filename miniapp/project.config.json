@@ -1,0 +1,8 @@
+{
+  "appid": "",
+  "projectname": "checkcollect-wechat",
+  "compileType": "miniprogram",
+  "setting": {
+    "es6": true
+  }
+}
