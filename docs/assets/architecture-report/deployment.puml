@@ -1,0 +1,28 @@
+@startuml
+!include common.puml
+top to bottom direction
+skinparam defaultFontSize 19
+node "手机或电脑" as Device {
+  artifact "Web 浏览器\nVue 页面" as Browser
+}
+cloud "Cloudflare\n固定 HTTPS 入口" as Edge
+node "Linux 笔记本" as Linux {
+  artifact "cloudflared\n固定隧道进程" as Tunnel
+  node "Docker Compose" as Docker {
+    node "app 容器\nSpring Boot + Vue" as App
+    database "postgres\nPostgreSQL" as DB
+    queue "rabbitmq\nRabbitMQ" as MQ
+    node "ocr\nPaddleOCR CPU" as OCR
+    DB -[hidden]right- MQ
+    MQ -[hidden]right- OCR
+  }
+  artifact "持久卷\n数据库 照片 消息 模型" as Volumes
+}
+Browser -right-> Edge : HTTPS
+Edge -down-> Tunnel : 经已建立的加密隧道回源
+Tunnel -right-> App : 127.0.0.1:8080
+App -down-> DB : JDBC
+App -down-> MQ : AMQP
+App -down-> OCR : HTTP
+Docker ..> Volumes : 持久化
+@enduml

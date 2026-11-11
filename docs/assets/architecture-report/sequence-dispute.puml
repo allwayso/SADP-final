@@ -1,0 +1,30 @@
+@startuml
+!include common.puml
+skinparam sequenceMessageAlign center
+skinparam defaultFontSize 18
+skinparam padding 0
+hide footbox
+autonumber
+actor 第三方人员 as Worker
+control "M3\n核验服务" as Review
+control "M2\n版本端口" as Poi
+control "M4\n通知端口" as Msg
+Worker -> Review : 现场照片 位置\n裁定与理由
+Review -> Review : 校验角色 指派关系\n排除争议当事人
+group 同一 PostgreSQL 业务事务
+  Review -> Poi : 创建现场证据版本\nFIELD_CHECK
+  Poi -> Poi : 保存版本与照片元数据
+  Poi --> Review : 现场版本标识
+  alt 以现场版本替换
+    Review -> Review : 最终版本 = 现场版本
+  else 原数据无误
+    Review -> Review : 最终版本 = 原当前版本
+  end
+  Review -> Review : 完成任务\n关闭异议及错误单
+  Review -> Poi : 同步 FINAL 摘要\n及最终有效版本
+  Review -> Msg : 分别通知原采集者和核验者
+  Msg -> Msg : 保存通知\n及收件人快照
+  Review -> Review : Spring 提交事务
+end
+Review --> Worker : 返回最终裁定
+@enduml
