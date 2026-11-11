@@ -1,6 +1,6 @@
 # check@collect 架构设计
 
-本目录是 POI 数据采集及核验移动应用的架构设计阶段成果，需求原文见 [desc.txt](../desc.txt)。当前不包含业务实现。
+本目录包含 POI 数据采集及核验移动应用的架构、实现、部署和验收资料，需求原文见 [desc.txt](../desc.txt)。最终提交入口见 [提交与验收清单](submission-checklist.md)，现场演示见 [演示脚本](demo-script.md)。
 
 - [架构设计](architecture.md)：架构选择、UML 组件图、组件职责表、连接件与接口表、业务流程和需求核对。
 - [四人分工说明](work-allocation.md)：模块边界、交付内容、预计比例与集成顺序。
