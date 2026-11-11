@@ -85,8 +85,9 @@ public class PoiController {
     @GetMapping("/{poiId}/navigation")
     public NavigationTarget navigation(@PathVariable UUID poiId,
                                        @RequestParam(required = false) Double fromLon,
-                                       @RequestParam(required = false) Double fromLat) {
-        return pois.navigation(poiId, fromLon, fromLat);
+                                       @RequestParam(required = false) Double fromLat,
+                                       @RequestParam(defaultValue = "walk") String mode) {
+        return pois.navigation(poiId, fromLon, fromLat, mode);
     }
 
     private static SubmitCommand command(String category, String name, String description, Double lon, Double lat,

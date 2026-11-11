@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '../../api'
+import { loadAmap } from './amapSdk'
 import type { PoiSummary } from './api'
 
 const props = defineProps<{ items: PoiSummary[] }>()
@@ -12,7 +12,6 @@ const router = useRouter()
 let map: any
 let amap: any
 let generation = 0
-let script: HTMLScriptElement | undefined
 let disposed = false
 async function draw() {
   if (!map || !amap) return
@@ -38,20 +37,14 @@ async function draw() {
 }
 onMounted(async () => {
   try {
-    const config = await api<{ provider: string; key: string }>('/pois/platform')
-    if (config.provider !== 'amap' || !config.key) { error.value = '地图尚未配置，请先使用下方列表'; return }
-    ;(window as any)._AMapSecurityConfig = { serviceHost: window.location.origin + '/api/_AMapService' }
-    script = document.createElement('script')
-    script.src = `https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(config.key)}`
-    await new Promise<void>((resolve, reject) => { script!.onload = () => resolve(); script!.onerror = () => reject(new Error('高德地图加载失败')); document.head.appendChild(script!) })
+    amap = await loadAmap()
     if (disposed) return
-    amap = (window as any).AMap
-    map = new amap.Map(host.value, { zoom: 12 })
+    map = new amap.Map(host.value, { zoom: 12, center: [104, 35] })
     await draw()
   } catch (cause) { error.value = cause instanceof Error ? cause.message : '地图加载失败' }
 })
 watch(() => props.items, draw)
-onBeforeUnmount(() => { disposed = true; ++generation; map?.destroy(); script?.remove() })
+onBeforeUnmount(() => { disposed = true; ++generation; map?.destroy() })
 </script>
 <template>
   <p v-if="error" class="error" role="alert">{{ error }}</p>

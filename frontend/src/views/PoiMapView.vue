@@ -82,6 +82,7 @@ onMounted(load)
       <input v-model="progress" placeholder="留空看全部，例如 ISSUE_OPEN" @keyup.enter="load" />
     </label>
     <div class="poi-toolbar-actions">
+      <RouterLink v-if="canCollect" to="/poi/new" class="primary-button">新增采集</RouterLink>
       <button class="secondary-button" type="button" :disabled="locating" @click="useMyLocation">
         {{ locating ? '定位中…' : '按我的位置筛选' }}
       </button>
@@ -100,7 +101,6 @@ onMounted(load)
   <div v-if="items.length" class="poi-layout">
     <section class="card poi-map">
       <AmapView :items="items" />
-      <RouterLink v-if="canCollect" to="/poi/new" class="inline-link">去采集一条新 POI →</RouterLink>
     </section>
 
     <section class="poi-results" aria-label="POI 列表">

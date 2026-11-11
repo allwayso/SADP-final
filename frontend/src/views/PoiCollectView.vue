@@ -26,6 +26,8 @@ const ocrBusy = ref(false)
 const submitting = ref(false)
 const error = ref('')
 const notice = ref('')
+let locationRequest = 0
+let locationController: AbortController | undefined
 
 function releasePreviews() {
   previews.value.forEach(url => URL.revokeObjectURL(url))
@@ -34,6 +36,10 @@ function releasePreviews() {
 
 function onFiles(event: Event) {
   const input = event.target as HTMLInputElement
+  if (!input.files?.length) return
+  ++locationRequest
+  locationController?.abort()
+  locating.value = false
   releasePreviews()
   files.value = Array.from(input.files ?? []).slice(0, 5)
   previews.value = files.value.map(file => URL.createObjectURL(file))
@@ -41,19 +47,25 @@ function onFiles(event: Event) {
   ocrCategory.value = null
   ocrSimulated.value = false
   fix.value = null
-  if (files.value.length > 0) void refreshLocation()
+  locationError.value = ''
+  input.value = ''
 }
 
 async function refreshLocation() {
+  if (!files.value.length || locating.value) return
+  const request = ++locationRequest
+  const controller = new AbortController()
+  locationController = controller
   locating.value = true
   locationError.value = ''
   fix.value = null
   try {
-    fix.value = await locate()
+    const result = await locate(15000, controller.signal)
+    if (request === locationRequest) fix.value = result
   } catch (cause) {
-    locationError.value = cause instanceof Error ? cause.message : '定位失败，请重试'
+    if (request === locationRequest) locationError.value = cause instanceof Error ? cause.message : '定位失败，请重试'
   } finally {
-    locating.value = false
+    if (request === locationRequest) locating.value = false
   }
 }
 
@@ -126,10 +138,7 @@ async function submit() {
 }
 
 onMounted(async () => {
-  if (!poiId.value) {
-    void refreshLocation()
-    return
-  }
+  if (!poiId.value) return
   try {
     const detail = await getPoi(poiId.value)
     existing.value = detail.poi
@@ -139,17 +148,16 @@ onMounted(async () => {
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '无法读取该 POI'
   }
-  void refreshLocation()
 })
 
-onUnmounted(releasePreviews)
+onUnmounted(() => { ++locationRequest; locationController?.abort(); releasePreviews() })
 </script>
 
 <template>
   <section class="page-heading">
     <div class="eyebrow">{{ poiId ? '整改或更新采集' : 'POI 采集' }}</div>
     <h1>{{ poiId ? '提交新的采集版本' : '拍摄并上传 POI' }}</h1>
-    <p>拍照位置由设备自动感知并随照片上传，不能手动填写。定位失败时请重试或允许定位，照片草稿会保留。</p>
+    <p>先拍照或选择照片，再点击“授权并获取位置”。位置由当前设备感知，随照片提交，不能手动填写。</p>
   </section>
 
   <p v-if="notice" class="success">{{ notice }}</p>
@@ -159,21 +167,29 @@ onUnmounted(releasePreviews)
     <section class="card poi-panel">
       <h2>1. 照片与位置</h2>
       <label class="photo-picker">
-        <span>拍摄或选择照片（最多 5 张）</span>
-        <input type="file" accept="image/*" capture="environment" multiple @change="onFiles" />
+        <span>现场拍照</span>
+        <input type="file" accept="image/*" capture="environment" @change="onFiles" />
       </label>
+      <label class="photo-picker">
+        <span>从相册或本机选择照片（最多 5 张）</span>
+        <input type="file" accept="image/*" multiple @change="onFiles" />
+      </label>
+      <p class="small-note">拍照或选图由系统窗口授权，只读取你选中的照片；选择后不会自动上传。请在 POI 现场获取位置，使用旧照片不会恢复其拍摄地点。</p>
       <div v-if="previews.length" class="photo-previews">
         <img v-for="(src, index) in previews" :key="index" :src="src" alt="待上传照片预览" />
       </div>
+      <p v-if="files.length" class="small-note">已选择 {{ files.length }} 张照片，尚未提交。</p>
       <dl class="details">
-        <div><dt>拍照位置</dt><dd class="mono">{{ fix ? `${fix.lon}, ${fix.lat}` : locating ? '定位中…' : '尚未取得' }}</dd></div>
+        <div><dt>本次采集位置</dt><dd class="mono">{{ fix ? `${fix.lon}, ${fix.lat}` : locating ? '定位中…' : '尚未取得' }}</dd></div>
         <div><dt>定位精度</dt><dd>{{ fix?.accuracyMeters != null ? `±${fix.accuracyMeters} 米` : '—' }}</dd></div>
         <div><dt>定位时间</dt><dd>{{ fix ? new Date(fix.locatedAt).toLocaleString() : '—' }}</dd></div>
         <div><dt>坐标系</dt><dd>{{ fix?.crs ?? '—' }}（保留原始坐标，不与其他坐标系混用）</dd></div>
       </dl>
+      <p v-if="fix && (fix.accuracyMeters === null || fix.accuracyMeters > 100)" class="small-note">当前定位精度较低，请开启精确位置并到开阔处重新定位，核对后再提交。</p>
       <p v-if="locationError" class="error" role="alert">{{ locationError }}</p>
-      <button class="secondary-button" type="button" :disabled="locating" @click="refreshLocation">
-        {{ locating ? '正在定位…' : '重新定位' }}
+      <p class="small-note">点击下面的按钮后才会请求浏览器定位。若之前已授权，浏览器可能不再弹窗；可在地址栏的网站权限中调整。</p>
+      <button class="secondary-button" type="button" :disabled="locating || !files.length" @click="refreshLocation">
+        {{ locating ? '正在定位…' : fix ? '重新获取位置' : '授权并获取位置' }}
       </button>
     </section>
 

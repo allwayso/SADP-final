@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { user } from '../api'
 import { categories, getPoi, locate, navigationTarget, photoUrl, purposeLabels } from '../modules/poi/api'
-import type { NavigationTarget, PoiCategory, PoiDetail } from '../modules/poi/api'
+import type { DeviceFix, NavigationTarget, PoiCategory, PoiDetail } from '../modules/poi/api'
+import { distanceMeters } from '../modules/poi/deviceLocation'
+import AmapRoute from '../modules/poi/AmapRoute.vue'
 
 const categoryLabels = new Map(categories.map(item => [item.value, item.label]))
 
@@ -18,6 +20,16 @@ const loading = ref(false)
 const error = ref('')
 const navigation = ref<NavigationTarget | null>(null)
 const navBusy = ref(false)
+const navigationOrigin = ref<DeviceFix | null>(null)
+const travelMode = ref<'walk' | 'car'>('walk')
+const originConfirmed = ref(false)
+let navigationRequest = 0
+let locationController: AbortController | undefined
+const navigationDistance = computed(() => navigationOrigin.value && detail.value
+  ? distanceMeters(navigationOrigin.value, detail.value.poi) : 0)
+const needsOriginConfirmation = computed(() => Boolean(navigationOrigin.value && (
+  navigationOrigin.value.accuracyMeters === null || navigationOrigin.value.accuracyMeters > 100
+  || navigationDistance.value > 100000)))
 const notice = ref(typeof route.query.notice === 'string' ? route.query.notice : '')
 
 const canCollect = computed(() => Boolean(user.value?.roles.includes('COLLECTOR')))
@@ -28,6 +40,11 @@ function formatTime(value: string | null | undefined): string {
 }
 
 async function load() {
+  ++navigationRequest
+  locationController?.abort()
+  navigation.value = null
+  navigationOrigin.value = null
+  navBusy.value = false
   loading.value = true
   error.value = ''
   try {
@@ -40,21 +57,47 @@ async function load() {
 }
 
 async function openNavigation() {
+  const request = ++navigationRequest
+  locationController?.abort()
+  const controller = new AbortController()
+  locationController = controller
+  error.value = ''
+  navBusy.value = true
+  navigation.value = null
+  navigationOrigin.value = null
+  originConfirmed.value = false
+  try {
+    const origin = await locate(15000, controller.signal)
+    if (request !== navigationRequest) return
+    navigationOrigin.value = origin
+    const target = await navigationTarget(poiId.value, origin, travelMode.value)
+    if (request !== navigationRequest) return
+    navigation.value = target
+  } catch (cause) {
+    if (request === navigationRequest) error.value = cause instanceof Error ? cause.message : '无法打开导航入口'
+  } finally {
+    if (request === navigationRequest) navBusy.value = false
+  }
+}
+
+async function updateNavigation() {
+  if (!navigationOrigin.value) return
+  const request = ++navigationRequest
+  navigation.value = null
   error.value = ''
   navBusy.value = true
   try {
-    const origin = await locate()
-    const target = await navigationTarget(poiId.value, origin)
-    navigation.value = target
-    window.open(target.url, '_blank', 'noopener')
+    const target = await navigationTarget(poiId.value, navigationOrigin.value, travelMode.value)
+    if (request === navigationRequest) navigation.value = target
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '无法打开导航入口'
+    if (request === navigationRequest) error.value = cause instanceof Error ? cause.message : '无法取得导航链接'
   } finally {
-    navBusy.value = false
+    if (request === navigationRequest) navBusy.value = false
   }
 }
 
 onMounted(load)
+onBeforeUnmount(() => { ++navigationRequest; locationController?.abort() })
 watch(poiId, load)
 </script>
 
@@ -84,15 +127,26 @@ watch(poiId, load)
         </dl>
         <div class="poi-actions">
           <button class="primary-button" type="button" :disabled="navBusy" @click="openNavigation">
-            {{ navBusy ? '正在取得…' : '路线 / 导航到此处' }}
+            {{ navBusy ? '正在取得…' : '获取起点并规划导航' }}
           </button>
           <RouterLink v-if="canCollect" class="secondary-button" :to="`/poi/${detail.poi.id}/revisions/new`">提交新版本</RouterLink>
           <RouterLink class="inline-link" to="/poi">返回分布列表 →</RouterLink>
         </div>
-        <p v-if="navigation" class="small-note">
-          {{ navigation.note }}<span v-if="navigation.simulated" class="badge badge-muted">模拟入口</span>
-          <a :href="navigation.url" target="_blank" rel="noopener" class="inline-link">再次打开地图链接</a>
-        </p>
+        <div v-if="navigationOrigin" class="navigation-confirmation">
+          <h3>确认导航起点</h3>
+          <p class="small-note">当前设备：{{ navigationOrigin.lon.toFixed(6) }}, {{ navigationOrigin.lat.toFixed(6) }} · 精度 {{ navigationOrigin.accuracyMeters === null ? '未知' : '±' + Math.round(navigationOrigin.accuracyMeters) + ' 米' }} · 距目标约 {{ (navigationDistance / 1000).toFixed(2) }} 公里</p>
+          <p class="small-note">电脑可能使用网络推算位置，请核对起点；位置不对时重新定位或换用手机。定位失败时不会用目标点代替起点。</p>
+          <label>出行方式<select v-model="travelMode" :disabled="navBusy" @change="updateNavigation"><option value="walk">步行</option><option value="car">驾车</option></select></label>
+          <p v-if="navigationDistance > 100000" class="error">起点距离目标超过 100 公里，请核对当前位置。远距离步行或跨境路线可能不受高德支持。</p>
+          <p v-else-if="needsOriginConfirmation" class="error">起点定位精度较低，请开启精确位置后重试，或确认起点后继续。</p>
+          <label v-if="needsOriginConfirmation" class="check"><input v-model="originConfirmed" type="checkbox" />我已核对起点位置和出行方式</label>
+          <template v-if="navigation">
+            <p class="small-note">{{ navigation.note }}<span v-if="navigation.simulated" class="badge badge-muted">模拟入口</span></p>
+            <a v-if="!needsOriginConfirmation || originConfirmed" :href="navigation.url" target="_blank" rel="noopener noreferrer" class="primary-button">{{ navigation.simulated ? '打开模拟位置' : '打开高德路线 / 导航' }}</a>
+          </template>
+          <AmapRoute v-if="navigation && !navigation.simulated && (!needsOriginConfirmation || originConfirmed)"
+            :origin="navigationOrigin" :destination="detail.poi" :mode="travelMode" />
+        </div>
       </section>
 
       <section class="card poi-panel">

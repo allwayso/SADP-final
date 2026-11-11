@@ -9,6 +9,6 @@ public interface MapAdapter {
 
     boolean simulated();
 
-    /** 返回可以打开目标位置的地图链接；接入真实平台后可返回路线或导航页。 */
-    String urlFor(double fromLon, double fromLat, double toLon, double toLat);
+    /** 输入均为 WGS84，由适配器转换为平台要求的坐标；mode 为 walk/car。 */
+    String urlFor(double fromLon, double fromLat, double toLon, double toLat, String mode);
 }

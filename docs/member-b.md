@@ -36,7 +36,7 @@
 | `GET /api/pois/{id}` | POI 摘要加全部采集版本，版本按新到旧排列 |
 | `GET /api/pois/{id}/photos/{photoId}` | 照片文件，需登录；路径限定在 `PHOTO_DIR` 内 |
 | `POST /api/pois/ocr` | multipart `photo` 一张，返回 `text`、`suggestedCategory`、`simulated`。结果只作建议 |
-| `GET /api/pois/{id}/navigation?fromLon=&fromLat=` | 返回 `provider`、`simulated`、`url`、目标坐标与说明 |
+| `GET /api/pois/{id}/navigation?fromLon=&fromLat=&mode=walk` | 必须提供有效 WGS84 起点，缺少/非法返回 400，不会用终点代替；`mode` 支持 `walk`/`car`，默认 `walk`。返回 `provider`、`simulated`、`url`、原始 WGS84 目标坐标与说明；高德 URL 内部使用转换后的 GCJ-02 起终点 |
 
 错误约定：`400` 表示缺照片、缺定位、坐标或时间不合法、分类非法；`401` 未登录；`403` 非采集者或未改初始密码；`404` POI、版本或照片不存在；`409` 版本号冲突。
 
@@ -93,7 +93,7 @@ M2 只投递必要字段，不决定通知的存储与重试；通知抛异常�
 4. `/poi` 按分类筛选、点“按我的位置筛选”限定范围后，列表与点位数同步变化。
 5. 用核验者或管理员账号调用 `setReviewSummary`（或在 C 完成后通过核验页面），`/poi` 中出现错误标识与进展，详情页“核验摘要”同步。
 6. 非采集者（`REVIEWER`）调用 `POST /api/pois` 返回 `403`；未登录访问 `/api/pois` 返回 `401`。
-7. 详情页“路线 / 导航到此处”能打开地图链接，并明确标注为模拟入口。
+7. 详情页“获取起点并规划导航”展示设备起点、精度与距离；高德模式在站内展示路线与距离，外部链接需用户点击，支持步行/驾车；桩模式明确标注为模拟入口。定位被拒绝不生成伪造起点，低精度或超过 100 公里的起点需再次确认。
 
 ## 9. 已知限制
 
