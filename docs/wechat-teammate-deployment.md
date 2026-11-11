@@ -1,6 +1,6 @@
 # 给部署同学：微信小程序接入更新教程
 
-适用项目：check@collect；目标分支：xcfsllsz/SADP-final 的 xcf，主仓库 PR #7。
+适用项目：check@collect；目标分支：xcfsllsz/SADP-final 的 xcf，主仓库 [PR #8](https://github.com/allwayso/SADP-final/pull/8)（PR #7 已合并）。
 
 ## 先看结论
 
