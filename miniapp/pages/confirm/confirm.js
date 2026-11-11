@@ -2,7 +2,7 @@ Page({
   data: { ticket: '', pairing: '', busy: false, done: false, message: '' },
   onLoad(options) {
     let ticket = ''
-    try { ticket = decodeURIComponent(options.scene || options.ticket || '') } catch (_) {}
+    try { ticket = decodeURIComponent(options.scene || options.ticket || getApp().globalData.previewTicket || '') } catch (_) {}
     if (/^[a-f0-9]{32}$/.test(ticket)) {
       this.setData({ ticket })
       return
