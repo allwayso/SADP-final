@@ -7,6 +7,10 @@ import type { PoiSummary } from '../modules/poi/api'
 
 const category = ref('')
 const progress = ref('')
+const progressLabels: Record<string, string> = {
+  PENDING_REVIEW: '待核验', PASSED: '核验通过', ISSUE_OPEN: '待采集者处理',
+  PENDING_RECHECK: '待复核', DISPUTED: '有异议', IN_ARBITRATION: '第三方处理中', FINAL: '最终裁定',
+}
 const bbox = ref('')
 const nearLabel = ref('')
 const items = ref<PoiSummary[]>([])
@@ -78,8 +82,11 @@ onMounted(load)
         <option v-for="item in categories" :key="item.value" :value="item.value">{{ item.label }}</option>
       </select>
     </label>
-    <label>处理进展（由核验环节写入）
-      <input v-model="progress" placeholder="留空看全部，例如 ISSUE_OPEN" @keyup.enter="load" />
+    <label>处理进展
+      <select v-model="progress" @change="load">
+        <option value="">全部进展</option>
+        <option v-for="(label, value) in progressLabels" :key="value" :value="value">{{ label }}</option>
+      </select>
     </label>
     <div class="poi-toolbar-actions">
       <RouterLink v-if="canCollect" to="/poi/new" class="primary-button">新增采集</RouterLink>
@@ -111,7 +118,7 @@ onMounted(load)
           <span class="badge" :class="item.review?.errorFlag ? 'badge-error' : ''">
             {{ item.review?.errorFlag ? '已标识错误' : '无错误标识' }}
           </span>
-          <span class="badge badge-muted">进展：{{ item.review?.progress ?? '未同步' }}</span>
+          <span class="badge badge-muted">进展：{{ progressLabels[item.review?.progress ?? ''] ?? item.review?.text ?? '未同步' }}</span>
         </div>
         <p class="mono small-note">{{ item.lon }}, {{ item.lat }} · {{ item.crs }}</p>
         <p class="small-note">第 {{ item.revisionNo }} 版 · 共 {{ item.revisionCount }} 个采集版本</p>
