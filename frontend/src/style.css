@@ -85,7 +85,7 @@ textarea { resize: vertical; min-height: 88px; }
 .ocr-box { border: 1px solid #e0e9e2; border-radius: 9px; padding: 14px; background: #f8fbf8; display: grid; gap: 8px; }
 .ocr-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .poi-toolbar { display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end; padding: 20px; margin-bottom: 22px; }
-.poi-toolbar-actions { display: flex; gap: 10px; }
+.poi-toolbar-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .poi-layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 20px; align-items: start; }
 .poi-map { padding: 22px; }
 .poi-map-head { display: grid; gap: 6px; margin-bottom: 12px; }
