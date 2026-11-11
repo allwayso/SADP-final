@@ -37,7 +37,7 @@ Page({
               this.fail('确认失败或请求已过期' + detail + '，请回网站重新发起。')
             }
           },
-          fail: () => this.fail('无法连接网站，请核对网络与服务器域名配置。')
+          fail: error => this.fail('无法连接 ' + getApp().globalData.apiBase + '：' + (error.errMsg || '请检查网络与服务器域名配置'))
         })
       },
       fail: () => this.fail('微信登录失败，请重试。')
