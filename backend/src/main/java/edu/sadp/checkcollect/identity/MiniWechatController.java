@@ -104,7 +104,7 @@ public class MiniWechatController {
      * 生码被平台拒绝时，小程序可以用网页显示的十二位配对码代替 ticket，流程不变。
      */
     @PostMapping("/confirm")
-    public void confirm(@RequestBody(required = false) ConfirmRequest body) {
+    public Map<String, Object> confirm(@RequestBody(required = false) ConfirmRequest body) {
         if (body == null || body.code() == null || body.code().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少微信登录凭证");
         }
@@ -117,6 +117,27 @@ public class MiniWechatController {
             if (current != initial || current.openId() != null) throw new ResponseStatusException(HttpStatus.CONFLICT, "该请求已确认");
             tickets.put(ticketId, current.confirmed(openId));
         }
+        // 未绑定的微信号可以自助注册采集者账号，小程序据此显示注册表单
+        boolean registered = identity.findByWechat(client.appId, openId).isPresent();
+        return Map.of("status", "confirmed", "registered", registered);
+    }
+
+    /**
+     * 小程序自助注册：openid 已在 confirm 阶段由后端换取，这里创建采集者账号并绑定，
+     * 随后原浏览器的 consume 会用同一请求完成登录。角色固定为采集者，不能自助申领其他角色。
+     */
+    @PostMapping("/register")
+    public Map<String, Object> register(@RequestBody(required = false) RegisterRequest body) {
+        if (body == null || body.ticket() == null || body.ticket().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少请求标识，请回网站重新发起");
+        }
+        Ticket ticket = valid(body.ticket());
+        if (ticket.openId() == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "请先在小程序里完成微信确认");
+        }
+        UserAccount account = identity.registerWithWechat(client.appId, ticket.openId(),
+                body.username(), body.password(), body.displayName());
+        return Map.of("status", "registered", "user", account.summary());
     }
 
     /**
@@ -192,6 +213,10 @@ public class MiniWechatController {
 
     /** {@code code} 为 wx.login 返回的临时凭证；{@code ticket} 与 {@code pairing} 二选一。 */
     public record ConfirmRequest(String ticket, String pairing, String code) {
+    }
+
+    /** 自助注册：ticket 必须已在 confirm 阶段绑定 openid；角色固定为采集者。 */
+    public record RegisterRequest(String ticket, String username, String password, String displayName) {
     }
 
     public record ConsumeRequest(String ticket) {

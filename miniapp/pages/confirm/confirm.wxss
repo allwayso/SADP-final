@@ -2,4 +2,6 @@
 .title { font-size: 48rpx; font-weight: bold; margin-bottom: 40rpx; }
 button { margin-top: 48rpx; }
 .pairing { margin-top: 40rpx; }
-.pairing input { margin-top: 16rpx; padding: 24rpx; border: 1px solid #c9d9d2; border-radius: 12rpx; font-size: 56rpx; letter-spacing: 16rpx; text-align: center; }
+.pairing input { margin-top: 16rpx; padding: 24rpx; border: 1px solid #c9d9d2; border-radius: 12rpx; font-size: 34rpx; text-align: center; }
+.pairing input:first-of-type { letter-spacing: 4rpx; }
+.field-label { margin-top: 24rpx; font-size: 28rpx; color: #52665f; }

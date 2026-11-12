@@ -124,4 +124,41 @@ class MiniWechatControllerTest {
         assertThatThrownBy(() -> controller.confirm(new MiniWechatController.ConfirmRequest(null, "invalid-pairing", "code")))
                 .isInstanceOf(ResponseStatusException.class);
     }
+
+    @Test
+    void unboundWechatIsToldToRegister() {
+        var qr = create();
+        when(client.openId("code")).thenReturn("fresh-openid");
+        var result = controller.confirm(new MiniWechatController.ConfirmRequest(qr.get("ticket"), null, "code"));
+        assertThat(result.get("registered")).isEqualTo(false);
+    }
+
+    @Test
+    void registerCreatesCollectorAccountAndBrowserLoginCompletes() {
+        var qr = create();
+        when(client.openId("code")).thenReturn("fresh-openid");
+        controller.confirm(new MiniWechatController.ConfirmRequest(qr.get("ticket"), null, "code"));
+
+        var created = new UserAccount(UUID.randomUUID(), "wxcol", "微信采集者", "hash", true, false,
+                Set.of(Role.COLLECTOR), true);
+        when(identity.registerWithWechat(any(), eq("fresh-openid"), eq("wxcol"), eq("password-123"), eq("微信采集者")))
+                .thenReturn(created);
+        var registered = controller.register(new MiniWechatController.RegisterRequest(
+                qr.get("ticket"), "wxcol", "password-123", "微信采集者"));
+        assertThat(registered.get("status")).isEqualTo("registered");
+
+        when(identity.userForWechat(any(), eq("fresh-openid"))).thenReturn(created);
+        assertThat(controller.consume(new MiniWechatController.ConsumeRequest(qr.get("ticket")), browser,
+                new MockHttpServletResponse()).get("status")).isEqualTo("complete");
+        verify(login).establish(eq(created.id()), eq(browser), any());
+    }
+
+    @Test
+    void registerRequiresConfirmedWechatIdentity() {
+        var qr = create();
+        assertThatThrownBy(() -> controller.register(new MiniWechatController.RegisterRequest(
+                qr.get("ticket"), "wxcol", "password-123", "微信采集者")))
+                .isInstanceOf(ResponseStatusException.class);
+        verify(identity, never()).registerWithWechat(any(), anyString(), anyString(), anyString(), anyString());
+    }
 }

@@ -1,11 +1,22 @@
 <view class="page">
   <view class="title">check@collect</view>
-  <view>请确认这是你在电脑上发起的登录或绑定请求。</view>
-  <view>如果不是你本人操作，请直接关闭。</view>
-  <view wx:if="{{!ticket}}" class="pairing">
+  <view wx:if="{{!needRegister}}">请确认这是你在电脑上发起的登录或绑定请求。</view>
+  <view wx:if="{{!needRegister}}">如果不是你本人操作，请直接关闭。</view>
+  <view wx:if="{{!ticket && !needRegister}}" class="pairing">
     <view>网页上的十二位配对码：</view>
     <input type="text" maxlength="12" value="{{pairing}}" bindinput="onPairingInput" placeholder="例如 A1B2C3D4E5F6" />
   </view>
-  <button type="primary" bindtap="confirm" loading="{{busy}}" disabled="{{busy || done}}">确认微信身份</button>
+  <button wx:if="{{!needRegister}}" type="primary" bindtap="confirm" loading="{{busy}}" disabled="{{busy || done}}">确认微信身份</button>
+
+  <view wx:if="{{needRegister}}" class="pairing">
+    <view>该微信还没有绑定账号。注册一个采集者账号即可继续，其他角色由管理员分配。</view>
+    <view class="field-label">账号名</view>
+    <input type="text" maxlength="64" value="{{username}}" bindinput="onUsernameInput" placeholder="3-64 位字母、数字或 . _ -" />
+    <view class="field-label">显示姓名</view>
+    <input type="text" maxlength="100" value="{{displayName}}" bindinput="onNameInput" placeholder="留空则使用账号名" />
+    <view class="field-label">密码</view>
+    <input type="password" maxlength="128" value="{{password}}" bindinput="onPasswordInput" placeholder="至少 10 位" />
+    <button type="primary" bindtap="register" loading="{{busy}}" disabled="{{busy || done}}">注册采集者账号并绑定微信</button>
+  </view>
   <view>{{message}}</view>
 </view>

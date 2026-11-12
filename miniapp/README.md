@@ -66,3 +66,15 @@ powershell -File scripts/wechat-preview.ps1 -Ticket <32位ticket>
 4. 本地验证脚本用 PowerShell 跨进程搬运 cookie 时会话不连续，不代表浏览器行为；页面轮询与确认始终使用同一个浏览器会话。
 
 配对码仍保留为开发者工具/体验版的兜底入口。面向公众的正式扫码仍受两点限制：生码需要可调用 `getwxacodeunlimit` 的主体资格，真机请求需要已备案并配置为 request 合法域名的 HTTPS 地址。
+
+## 2026-11-12 自助注册（扫完码没有账号时）
+
+`/api/auth/wechat/mini/confirm` 现在返回 `registered`：openid 已绑定账号时为 `true`，否则为 `false`，小程序据此显示注册表单。提交 `/api/auth/wechat/mini/register`（`ticket`、`username`、`password`、`displayName`）后：
+
+- 创建账号并绑定 openid，角色**固定为采集者**；核验者、第三方与管理员仍由管理员分配，不能自助申领。
+- 密码由本人设置，不再要求首次改密；账号名沿用 `[A-Za-z0-9._-]{3,64}`，与管理员开号规则一致。
+- 原浏览器的 `consume` 随后用同一请求完成登录，页面直接进入工作台。
+
+实测结果：未绑定的微信扫码 → 注册 `wxcollector` → 数据库新增该账号（COLLECTOR）、`wechat_bindings` 变为 1 → `consume` 返回 `complete`，会话用户为 `wxcollector`。
+
+注意：`/register` 必须在 `SecurityConfig` 中同时加入 CSRF 忽略与 permitAll，否则小程序请求会被 403 拦在入口，页面表现为“点注册没有反应”。

@@ -18,12 +18,14 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain security(HttpSecurity http, IdentityRepository users) throws Exception {
-        http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()).ignoringRequestMatchers("/api/auth/wechat/mini/confirm"))
+        http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .ignoringRequestMatchers("/api/auth/wechat/mini/confirm", "/api/auth/wechat/mini/register"))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/", "/index.html", "/login", "/password", "/account", "/admin/users", "/poi/**", "/review", "/messages", "/assets/**", "/favicon.ico").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/health", "/api/auth/csrf", "/api/auth/wechat/status", "/api/auth/wechat/start", "/api/auth/wechat/callback").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/wechat/mini/status").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/wechat/mini/create", "/api/auth/wechat/mini/confirm", "/api/auth/wechat/mini/consume").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/wechat/mini/create", "/api/auth/wechat/mini/confirm", "/api/auth/wechat/mini/consume",
+                        "/api/auth/wechat/mini/register").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated())
             .exceptionHandling(ex -> ex

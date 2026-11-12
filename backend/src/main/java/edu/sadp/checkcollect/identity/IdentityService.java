@@ -105,6 +105,41 @@ public class IdentityService {
         return account;
     }
 
+    /** 该微信是否已绑定账号；未绑定时小程序可以引导用户自助注册。 */
+    public java.util.Optional<UserSummary> findByWechat(String appId, String openId) {
+        return users.findByWechat(appId, openId).map(UserAccount::summary);
+    }
+
+    /**
+     * 小程序扫码自助注册：openid 已由后端向微信换取，这里只创建**采集者**账号并绑定，
+     * 不允许自助选择核验者、第三方或管理员，那些角色仍由管理员分配。
+     */
+    @Transactional
+    public UserAccount registerWithWechat(String appId, String openId, String username, String password, String displayName) {
+        if (appId == null || appId.isBlank() || openId == null || openId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少小程序身份，请重新扫码");
+        }
+        String name = displayName == null || displayName.isBlank() ? username : displayName.trim();
+        validateAccount(username, name, password, Set.of(Role.COLLECTOR));
+        if (users.findByUsername(username.trim()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "账号名已被使用，请换一个");
+        }
+        if (users.findByWechat(appId, openId).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "该微信已绑定账号，请直接扫码登录");
+        }
+        UUID id = UUID.randomUUID();
+        String hash = passwords.encode(password);
+        try {
+            users.create(id, username.trim(), name, hash, Set.of(Role.COLLECTOR));
+            // 密码由本人设置，不再强制首次改密
+            users.changePassword(id, hash);
+            users.bindWechat(id, appId, openId);
+        } catch (DataIntegrityViolationException error) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "账号或微信绑定已被占用", error);
+        }
+        return users.find(id).orElseThrow();
+    }
+
     public List<UserSummary> allUsers() {
         requireRole(Role.ADMIN);
         return users.list().stream().map(UserAccount::summary).toList();
