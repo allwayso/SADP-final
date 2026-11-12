@@ -1,6 +1,6 @@
 Page({
   data: {
-    ready: false,
+    ready: true,
     busy: false,
     user: null,
     step: 'idle',
@@ -14,17 +14,25 @@ Page({
     this.refresh()
   },
   refresh() {
+    // 先在界面上给出登录按钮，再在后台确认是否已有会话，避免网络不畅时一直停在“检查中”。
     wx.request({
       url: getApp().globalData.apiBase + '/api/me',
       method: 'GET',
+      timeout: 6000,
       success: res => {
         if (res.statusCode === 200 && res.data && res.data.username) {
-          this.setData({ ready: true, user: res.data, step: 'idle', message: '' })
+          this.setData({ user: res.data, step: 'idle', message: '' })
         } else {
-          this.setData({ ready: true, user: null })
+          this.setData({ user: null })
         }
       },
-      fail: () => this.setData({ ready: true, message: '无法连接服务：' + getApp().globalData.apiBase })
+      fail: error => {
+        this.setData({
+          user: null,
+          message: '无法连接服务 ' + getApp().globalData.apiBase + '，请确认手机与开发机在同一 Wi-Fi'
+        })
+        console.log('me request failed', error)
+      }
     })
   },
   login() {
