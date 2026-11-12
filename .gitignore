@@ -23,3 +23,6 @@ backend/src/main/resources/static/
 
 # 微信开发者工具按机器生成的项目私有配置
 miniapp/project.private.config.json
+release/
+__pycache__/
+app-secret.txt

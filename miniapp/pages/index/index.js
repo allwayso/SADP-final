@@ -1,113 +1,95 @@
+const client = require('../../utils/request')
+
 Page({
   data: {
-    ready: true,
-    busy: false,
-    user: null,
-    step: 'idle',
-    action: '',
-    username: '',
-    password: '',
-    displayName: '',
-    message: ''
+    busy: false, user: null, step: 'idle', action: '',
+    username: '', password: '', displayName: '', message: '', pairingCode: ''
   },
-  onShow() {
-    this.refresh()
-  },
-  refresh() {
-    // 先在界面上给出登录按钮，再在后台确认是否已有会话，避免网络不畅时一直停在“检查中”。
-    wx.request({
-      url: getApp().globalData.apiBase + '/api/me',
-      method: 'GET',
-      timeout: 6000,
-      success: res => {
-        if (res.statusCode === 200 && res.data && res.data.username) {
-          this.setData({ user: res.data, step: 'idle', message: '' })
-        } else {
-          this.setData({ user: null })
-        }
-      },
-      fail: error => {
-        this.setData({
-          user: null,
-          message: '无法连接服务 ' + getApp().globalData.apiBase + '，请确认手机与开发机在同一 Wi-Fi'
-        })
-        console.log('me request failed', error)
-      }
-    })
-  },
-  login() {
+  onShow() { this.refresh() },
+  onUnload() { this.revision = (this.revision || 0) + 1 },
+  async refresh() {
     if (this.data.busy) return
-    this.setData({ busy: true, message: '' })
-    wx.login({
-      success: ({ code }) => {
-        if (!code) { this.fail('无法取得微信登录凭证，请重试'); return }
-        wx.request({
-          url: getApp().globalData.apiBase + '/api/auth/wechat/mini/session',
-          method: 'POST',
-          data: { code },
-          success: res => this.handle(res, 'login'),
-          fail: error => this.fail('无法连接服务：' + (error.errMsg || '请检查网络'))
-        })
-      },
-      fail: () => this.fail('微信登录失败，请重试')
-    })
+    const revision = this.revision = (this.revision || 0) + 1
+    try {
+      const user = await client.request('/me', { timeout: 6000 })
+      if (revision !== this.revision) return
+      this.setData({ user, message: '' })
+    } catch (error) {
+      if (revision !== this.revision) return
+      if (error.status === 401) this.setData({ user: null, step: 'idle' })
+      else this.setData({ message: error.message })
+    }
   },
-  handle(res, action) {
-    const body = res.data || {}
-    if (res.statusCode === 200 && body.status === 'need-binding') {
-      this.setData({ busy: false, step: 'choice', message: '该微信还没有绑定账号。' })
-      return
+  login() { return this.authenticate({}) },
+  async authenticate(fields) {
+    if (this.data.busy) return
+    const revision = this.revision = (this.revision || 0) + 1
+    client.beginIdentityChange()
+    this.setData({ busy: true, message: '' })
+    try {
+      const code = await new Promise((resolve, reject) => wx.login({
+        success: result => result.code ? resolve(result.code) : reject(new Error('无法取得微信登录凭证，请重试')),
+        fail: () => reject(new Error('微信登录失败，请重试'))
+      }))
+      const body = await client.request('/auth/wechat/mini/session', { method: 'POST', data: { code, ...fields } })
+      if (revision !== this.revision) return
+      if (body.status === 'need-binding') {
+        this.setData({ step: 'choice', message: '该微信还没有绑定账号。' })
+      } else if (body.user) {
+        this.setData({ user: body.user, step: 'idle', password: '', message: '' })
+        wx.showToast({ title: '已登录', icon: 'success' })
+      } else throw new Error('登录响应异常，请重试')
+    } catch (error) {
+      if (revision === this.revision) this.fail(error.message)
+    } finally {
+      if (revision === this.revision) this.setData({ busy: false })
     }
-    if (res.statusCode === 200 && body.user) {
-      this.setData({ busy: false, user: body.user, step: 'idle', message: '' })
-      wx.showToast({ title: action === 'login' ? '已登录' : '已完成', icon: 'success' })
-      return
-    }
-    const detail = body.message ? '：' + body.message : '（HTTP ' + res.statusCode + '）'
-    this.fail('操作失败' + detail)
   },
   chooseBind() { this.setData({ step: 'form', action: 'bind', username: '', password: '', displayName: '', message: '' }) },
   chooseRegister() { this.setData({ step: 'form', action: 'register', username: '', password: '', displayName: '', message: '' }) },
-  back() { this.setData({ step: 'choice', message: '' }) },
+  back() { if (!this.data.busy) this.setData({ step: 'choice', password: '', message: '' }) },
   onUsername(event) { this.setData({ username: (event.detail.value || '').trim() }) },
   onPassword(event) { this.setData({ password: event.detail.value || '' }) },
   onName(event) { this.setData({ displayName: (event.detail.value || '').trim() }) },
   submit() {
-    if (this.data.busy) return
     const { action, username, password, displayName } = this.data
-    if (!/^[A-Za-z0-9._-]{3,64}$/.test(username)) {
-      this.fail('账号名需为 3-64 位字母、数字、点、下划线或连字符')
-      return
-    }
-    if (!password || password.length < 10) {
-      this.fail('密码至少 10 位')
-      return
-    }
-    this.setData({ busy: true, message: '' })
-    wx.login({
-      success: ({ code }) => {
-        if (!code) { this.fail('无法取得微信登录凭证，请重试'); return }
-        wx.request({
-          url: getApp().globalData.apiBase + '/api/auth/wechat/mini/session',
-          method: 'POST',
-          data: { code, action, username, password, displayName: displayName || username },
-          success: res => this.handle(res, action),
-          fail: error => this.fail('无法连接服务：' + (error.errMsg || '请检查网络'))
-        })
-      },
-      fail: () => this.fail('微信登录失败，请重试')
-    })
+    if (!/^[A-Za-z0-9._-]{3,64}$/.test(username)) { this.fail('账号名需为 3-64 位字母、数字或 . _ -'); return }
+    if (!password || password.length < 10 || password.length > 128) { this.fail('密码需为 10-128 位'); return }
+    return this.authenticate({ action, username, password, displayName: displayName || username })
   },
-  logout() {
-    wx.request({
-      url: getApp().globalData.apiBase + '/api/auth/wechat/mini/logout',
-      method: 'POST',
-      success: () => this.setData({ user: null, step: 'idle', message: '' }),
-      fail: () => this.setData({ message: '退出失败，请重试' })
-    })
+  async logout() {
+    if (this.data.busy) return
+    this.revision = (this.revision || 0) + 1
+    client.beginIdentityChange()
+    this.setData({ busy: true, message: '' })
+    try {
+      await client.request('/auth/wechat/mini/logout', { method: 'POST' })
+      client.clearSession()
+      this.setData({ user: null, step: 'idle', password: '', pairingCode: '', message: '' })
+    } catch (error) { this.fail('退出失败：' + error.message) }
+    finally { this.setData({ busy: false }) }
+  },
+  openPairing() { this.setData({ step: 'pairing', pairingCode: '', message: '' }) },
+  closePairing() { if (!this.data.busy) this.setData({ step: 'idle', pairingCode: '', message: '' }) },
+  onPairingCode(event) { this.setData({ pairingCode: (event.detail.value || '').replace(/\D/g, '').slice(0, 8) }) },
+  async confirmPairing() {
+    if (this.data.busy || !this.data.user) return
+    if (!/^\d{8}$/.test(this.data.pairingCode)) { this.fail('请输入网页上的 8 位配对码'); return }
+    this.setData({ busy: true, message: '' })
+    try {
+      const decision = await new Promise(resolve => wx.showModal({
+        title: '确认登录网站',
+        content: '将账号 ' + this.data.user.username + ' 登录到 ' + getApp().globalData.apiBase + ' 的网页？请仅确认本人网页显示的配对码。',
+        confirmText: '确认登录', success: resolve, fail: () => resolve({ confirm: false })
+      }))
+      if (!decision.confirm) return
+      await client.request('/auth/wechat/mini/pairings/confirm', { method: 'POST', data: { code: this.data.pairingCode } })
+      this.setData({ step: 'idle', pairingCode: '', message: '已确认，请回到刚才的网页。' })
+    } catch (error) { this.fail(error.message) }
+    finally { this.setData({ busy: false }) }
   },
   fail(message) {
-    this.setData({ busy: false, message })
+    this.setData({ message })
     wx.showToast({ title: message, icon: 'none' })
   }
 })

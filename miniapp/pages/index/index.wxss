@@ -4,7 +4,7 @@
 .subtitle { margin-top: 8rpx; color: #6d7f7b; font-size: 26rpx; }
 .card { margin-top: 40rpx; padding: 32rpx; border: 1rpx solid #dfe9e3; border-radius: 16rpx; background: #fff; }
 .who { font-size: 40rpx; font-weight: 700; }
-.meta { color: #52665f; font-size: 28rpx; margin-top: 6rpx; }
+.meta { color: #52665f; font-size: 28rpx; margin-top: 6rpx; overflow-wrap: anywhere; }
 .lead { font-size: 32rpx; font-weight: 600; margin-bottom: 12rpx; }
 .hint { color: #71817d; font-size: 26rpx; margin: 12rpx 0; }
 .label { margin-top: 24rpx; font-size: 26rpx; color: #52665f; }

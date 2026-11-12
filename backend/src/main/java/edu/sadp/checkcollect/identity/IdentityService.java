@@ -45,6 +45,7 @@ public class IdentityService {
     }
 
     public UserAccount verifyPassword(String username, String password) {
+        if (username == null || password == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请输入账号和密码");
         UserAccount account = users.findByUsername(username).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "账号或密码错误"));
         if (!account.enabled() || !passwords.matches(password, account.passwordHash())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "账号或密码错误");
@@ -101,6 +102,12 @@ public class IdentityService {
 
     public UserAccount userForWechat(String appId, String openId) {
         UserAccount account = users.findByWechat(appId, openId).orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "请先用团队账号登录并绑定微信"));
+        if (!account.enabled()) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "账号已停用");
+        return account;
+    }
+
+    public UserAccount activeUser(UUID id) {
+        UserAccount account = users.find(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "账号不存在"));
         if (!account.enabled()) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "账号已停用");
         return account;
     }

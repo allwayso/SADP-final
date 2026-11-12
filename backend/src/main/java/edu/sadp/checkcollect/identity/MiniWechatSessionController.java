@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -100,6 +101,7 @@ public class MiniWechatSessionController {
     /** 小程序退出登录：结束当前微信端的会话，不影响其他端。 */
     @PostMapping("/logout")
     public void logout(HttpServletRequest request) {
+        SecurityContextHolder.clearContext();
         var session = request.getSession(false);
         if (session != null) session.invalidate();
     }

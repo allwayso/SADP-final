@@ -19,11 +19,13 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain security(HttpSecurity http, IdentityRepository users) throws Exception {
         http.csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .ignoringRequestMatchers("/api/auth/wechat/mini/session", "/api/auth/wechat/mini/logout"))
+                .ignoringRequestMatchers("/api/auth/wechat/mini/session"))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/", "/index.html", "/login", "/password", "/account", "/admin/users", "/poi/**", "/review", "/messages", "/assets/**", "/favicon.ico").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/health", "/api/auth/csrf", "/api/auth/wechat/status", "/api/auth/wechat/start", "/api/auth/wechat/callback").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/wechat/mini/status").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/wechat/mini/pairings/confirm").authenticated()
+                .requestMatchers("/api/auth/wechat/mini/pairings", "/api/auth/wechat/mini/pairings/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/wechat/mini/session", "/api/auth/wechat/mini/logout").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated())

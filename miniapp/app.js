@@ -1,7 +1,7 @@
-// 正式环境指向已部署站点；开发者工具里默认连本机联调实例。
-const platform = wx.getDeviceInfo().platform
+// 正式验收时开发工具与手机使用同一后端。局域网联调请显式修改 config.js。
+const config = require('./config')
 App({
   globalData: {
-    apiBase: platform === 'devtools' ? 'http://localhost:8081' : 'https://collect.allwayso.top'
+    apiBase: config.apiBase
   }
 })

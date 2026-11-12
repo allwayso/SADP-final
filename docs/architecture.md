@@ -48,7 +48,7 @@ M2、M3 使用 M1 的身份与角色服务；M2、M3 调用 M4 生成通知。M3
 
 | 调用方 → 提供方 | 连接方式/接口 | 主要输入 → 输出/效果 |
 | --- | --- | --- |
-| 浏览器/小程序 → M1 | HTTPS `/api/auth/*`、`GET /api/me`；小程序 `POST /api/auth/wechat/mini/session` | 小程序微信身份登录、绑定或注册结果 → 本地登录态、用户及角色；第三方角色不由用户自行申领 |
+| 浏览器/小程序 → M1 | HTTPS `/api/auth/*`、`GET /api/me`；小程序 `POST /api/auth/wechat/mini/session`；网页 `/api/auth/wechat/mini/pairings` | 小程序微信登录、绑定或注册；原浏览器通过一次性配对建立独立会话；第三方角色不由用户自行申领 |
 | 浏览器 → M2/M3 | HTTPS `POST /api/pois`、`POST /api/pois/{id}/revisions`（M2）；`POST /api/issues/{id}/revisions`（M3） | 新采集/无活动错误单的普通更新由 M2 接收；针对错误单的整改由 M3 接收并协调新版本与状态 |
 | 浏览器 → M2 | HTTPS `GET /api/pois?category=&bbox=&progress=` | 类别、地图范围、进展 → POI 位置、错误标识与处理摘要；详情包含对应照片和版本 |
 | M2 → 地图/OCR | 地图适配接口、`recognizeText(photoId)` | 目标位置/照片 → 地图、路线导航能力/文字识别建议；地图渲染 SDK 可由前端调用 |
