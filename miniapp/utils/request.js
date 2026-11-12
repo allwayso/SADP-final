@@ -32,14 +32,26 @@ function raw(path, options = {}) {
         if (generation === epoch) {
           const headers = res.header || {}
           const cookies = res.cookies && res.cookies.length ? res.cookies : [headers['Set-Cookie'] || headers['set-cookie'] || '']
+          // 同时保存会话和 CSRF Cookie：后端的 CookieCsrfTokenRepository 校验时会读取 XSRF-TOKEN，
+          // 只传 JSESSIONID 会让确认类 POST 被 403 拒绝。
+          const stored = new Map()
+          for (const pair of String(wx.getStorageSync(key()) || '').split(';')) {
+            const index = pair.indexOf('=')
+            if (index > 0) stored.set(pair.slice(0, index).trim(), pair.slice(index + 1).trim())
+          }
           for (const item of cookies) {
-            const match = /(?:^|,\s*)JSESSIONID=([^; ,]*)/.exec(item)
-            if (match) {
-              if (!match[1] || /max-age=0(?:;|$)/i.test(item)) wx.removeStorageSync(key())
-              else wx.setStorageSync(key(), 'JSESSIONID=' + match[1])
+            const text = String(item || '')
+            const pattern = /(JSESSIONID|XSRF-TOKEN)=([^;,\s]*)/g
+            let match
+            while ((match = pattern.exec(text)) !== null) {
+              if (!match[2] || /max-age=0/i.test(text)) stored.delete(match[1])
+              else stored.set(match[1], match[2])
               csrf = null
             }
           }
+          const joined = [...stored.entries()].map(([name, value]) => name + '=' + value).join('; ')
+          if (joined) wx.setStorageSync(key(), joined)
+          else wx.removeStorageSync(key())
         }
         if (res.statusCode >= 200 && res.statusCode < 300) { resolve(res.data); return }
         const error = new Error((res.data && res.data.message) || '请求失败（HTTP ' + res.statusCode + '）')
