@@ -17,4 +17,8 @@
 本次“一图二表”的图部分采用 UML 视图组，两张表分别为质量属性表、映射关系表。组件职责和连接件接口说明作为补充材料，不替代这两张表。Word 保留课程模板的封面、四个正文部分及教师评分栏，四位成员信息和各 25% 的最终贡献已填写。
 
 - [Linux 部署与验收](deployment-linux.md)：Docker、真实服务集成、高德、PaddleOCR、HTTPS 和持久化。
+- [微信修复验收记录](wechat-release-acceptance.md)：自动测试、实际部署和待本人执行的微信真机检查。
+- [微信真机验收与协作同步](wechat-device-acceptance.md)：已完成的真机验收结果、让其他成员独立复验的步骤、常见失败处理与回报格式。
 - [四模块集成记录](integration-status.md)：修复对应、测试结果和部署待验收项。
+
+- [微信交接部署教程](wechat-teammate-deployment.md)：给 Linux 部署同学的逐步更新、配置、平台限制、验收及回滚说明。

@@ -1,0 +1,2 @@
+*.sh text eol=lf
+scripts/Dockerfile.wechat-runtime text eol=lf

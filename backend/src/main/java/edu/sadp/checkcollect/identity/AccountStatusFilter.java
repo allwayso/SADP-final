@@ -30,7 +30,9 @@ public class AccountStatusFilter extends OncePerRequestFilter {
             boolean passwordEndpoint = path.equals("/api/me/password") && request.getMethod().equals("POST");
             boolean profileEndpoint = path.equals("/api/me") && request.getMethod().equals("GET");
             if (account.mustChangePassword() && path.startsWith("/api/") && !passwordEndpoint && !profileEndpoint
-                    && !path.equals("/api/auth/logout") && !path.equals("/api/auth/csrf")) {
+                    && !path.equals("/api/auth/logout") && !path.equals("/api/auth/csrf")
+                    && !path.equals("/api/auth/wechat/mini/logout")
+                    && !path.equals("/api/auth/wechat/mini/pairings/confirm")) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "请先修改初始密码");
                 return;
             }
