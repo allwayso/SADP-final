@@ -1,22 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { login } from '../api'
-import MiniWechat from '../components/MiniWechat.vue'
 
 const route = useRoute()
 const router = useRouter()
 const username = ref('')
 const password = ref('')
-const error = ref(route.query.error ? '微信授权未完成，请重新扫码或使用账号密码登录' : '')
+const error = ref(route.query.error ? '微信授权未完成，请重新授权或使用账号密码登录' : '')
 const busy = ref(false)
-const wechatReady = ref(false)
-onMounted(async () => {
-  try {
-    const response = await fetch('/api/auth/wechat/status')
-    wechatReady.value = response.ok && (await response.json() as { configured: boolean }).configured
-  } catch { wechatReady.value = false }
-})
 
 async function submit() {
   busy.value = true
@@ -41,15 +33,14 @@ async function submit() {
     <section class="card login-card">
       <div class="eyebrow">账号登录</div>
       <h2>开始工作</h2>
-      <p class="muted">手机现场作业使用团队账号。电脑也可以使用已绑定的微信扫码。</p>
+      <p class="muted">手机现场作业使用团队账号或浏览器；微信登录在 check@collect 小程序内完成。</p>
       <form @submit.prevent="submit">
         <label>团队账号<input v-model="username" name="username" autocomplete="username" required /></label>
         <label>密码<input v-model="password" name="password" type="password" autocomplete="current-password" required /></label>
         <p v-if="error" class="error" role="alert">{{ error }}</p>
         <button class="primary-button full" :disabled="busy">{{ busy ? '正在登录…' : '登录' }}</button>
       </form>
-      <MiniWechat purpose="LOGIN" />
-      <template v-if="wechatReady"><div class="divider"><span>或</span></div><a class="secondary-button full" href="/api/auth/wechat/start">用微信扫码登录</a><p class="small-note">首次使用微信，请先登录团队账号并在“我的账号”绑定。</p></template>
+      <p class="small-note">微信登录与绑定请打开「check@collect」微信小程序：用微信身份登录后，采集与核验仍在网站在线完成。</p>
     </section>
   </div>
 </template>

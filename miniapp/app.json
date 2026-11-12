@@ -1,8 +1,8 @@
 {
   "pages": [
-    "pages/confirm/confirm"
+    "pages/index/index"
   ],
   "window": {
-    "navigationBarTitleText": "check@collect 微信确认"
+    "navigationBarTitleText": "check@collect 微信登录"
   }
 }
