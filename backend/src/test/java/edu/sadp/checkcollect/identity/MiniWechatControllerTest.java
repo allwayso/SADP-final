@@ -24,7 +24,7 @@ class MiniWechatControllerTest {
     final MiniWechatClient client = mock(MiniWechatClient.class);
     final IdentityService identity = mock(IdentityService.class);
     final SessionLogin login = mock(SessionLogin.class);
-    final MiniWechatController controller = new MiniWechatController(client, identity, login);
+    final MiniWechatController controller = new MiniWechatController(client, identity, login, 300);
     final MockHttpServletRequest browser = new MockHttpServletRequest();
 
     Map<String, String> create() {
@@ -37,22 +37,37 @@ class MiniWechatControllerTest {
         return controller.create(new MiniWechatController.CreateRequest("LOGIN"), request);
     }
 
+    Map<String, String> createBind() {
+        when(client.configured()).thenReturn(true);
+        when(client.qr(anyString())).thenReturn(new byte[] { 1 });
+        return controller.create(new MiniWechatController.CreateRequest("BIND"), browser);
+    }
+
     @Test
-    void otherBrowserCannotConsumeTicket() {
+    void unconfirmedTicketStaysPendingAndCannotCreateSession() {
         var qr = create();
-        assertThatThrownBy(() -> controller.consume(new MiniWechatController.ConsumeRequest(qr.get("ticket")),
-                new MockHttpServletRequest(), new MockHttpServletResponse()))
-                .isInstanceOf(ResponseStatusException.class);
+        var result = controller.consume(new MiniWechatController.ConsumeRequest(qr.get("ticket")),
+                new MockHttpServletRequest(), new MockHttpServletResponse());
+        assertThat(result.get("status")).isEqualTo("pending");
         verifyNoInteractions(login);
     }
 
     @Test
-    void browserCannotInventConfirmedIdentity() {
-        var qr = create();
-        var result = controller.consume(new MiniWechatController.ConsumeRequest(qr.get("ticket")), browser,
-                new MockHttpServletResponse());
-        assertThat(result.get("status")).isEqualTo("pending");
-        verifyNoInteractions(identity, login);
+    void bindTicketRequiresTheOwningAccount() {
+        var owner = new UserAccount(UUID.randomUUID(), "member-a", "A", "hash", true, false,
+                Set.of(Role.COLLECTOR), false);
+        var other = new UserAccount(UUID.randomUUID(), "member-b", "B", "hash", true, false,
+                Set.of(Role.COLLECTOR), false);
+        when(identity.currentUser()).thenReturn(owner, other);
+        var qr = createBind();
+        when(client.openId("code")).thenReturn("verified-id");
+        controller.confirm(new MiniWechatController.ConfirmRequest(qr.get("ticket"), null, "code"));
+
+        // 另一个已登录账号不能消费这张绑定请求
+        assertThatThrownBy(() -> controller.consume(new MiniWechatController.ConsumeRequest(qr.get("ticket")),
+                browser, new MockHttpServletResponse()))
+                .isInstanceOf(ResponseStatusException.class);
+        verify(identity, never()).bindWechat(any(), anyString(), anyString());
     }
 
     @Test

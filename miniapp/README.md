@@ -55,3 +55,14 @@ powershell -File scripts/wechat-preview.ps1 -Ticket <32位ticket>
 4. 后端返回 complete；使用新会话读取 /api/me 得到 member-a，用户 ID 与绑定时相同，ADMIN、COLLECTOR 角色一致。
 
 范围：微信真实身份、数据库绑定、退出后重新建立会话已验证；确认端为开发者工具模拟器和配对码，不是手机正式扫码验收。微信 getwxacodeunlimit 的 85412 限制仍存在，Linux 正式部署尚未更新。不得将本记录表述为公众扫码入口已经可用。
+
+## 2026-11-12 真机（局域网）绑定与微信登录验收
+
+手机与开发机连同一 Wi-Fi，小程序 `apiBase` 指向开发机 `http://192.168.31.165:8081`；预览包在打包时通过 `preview-context.js` 内嵌本次一次性 ticket 与后端地址，扫码后页面直接确认，**无需输入配对码**。
+
+1. 绑定：手机微信扫码 → 小程序 `wx.login` 取 code → 后端 `jscode2session` 换取 openid → 写入 `wechat_bindings`；`consume` 返回 `complete`，`/api/me` 中 `wechatBound=true`，userId 与发起绑定的账号一致。
+2. 登录：退出登录后重新发起扫码；后端用 openid 找到同一账号并建立会话，**全程未使用密码**；同一进程内立即读取 `/api/me` 返回 `admin`，与绑定时相同 userId。
+3. 预览上传耗时较长，ticket 有效期可用 `MINI_TICKET_SECONDS` 调整（本次演示 1800 秒，生产建议保持默认 300）。ticket 是 256 位不可猜测的一次性凭证，只出现在发起请求的页面；绑定请求额外要求仍登录为发起绑定时的账号，登录请求不绑会话。
+4. 本地验证脚本用 PowerShell 跨进程搬运 cookie 时会话不连续，不代表浏览器行为；页面轮询与确认始终使用同一个浏览器会话。
+
+配对码仍保留为开发者工具/体验版的兜底入口。面向公众的正式扫码仍受两点限制：生码需要可调用 `getwxacodeunlimit` 的主体资格，真机请求需要已备案并配置为 request 合法域名的 HTTPS 地址。

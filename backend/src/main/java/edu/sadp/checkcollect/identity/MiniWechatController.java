@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +23,8 @@ import org.springframework.web.server.ResponseStatusException;
  * 微信小程序扫码登录/绑定：网站生成一次性 ticket，小程序在确认页用 wx.login 的 code 换取 openid，
  * 原浏览器再凭同一会话消费 ticket 完成登录或绑定。
  *
- * <p>ticket 保存在本实例内存中，五分钟有效且一次性使用，因此当前只支持单实例部署。
+ * <p>ticket 保存在本实例内存中，默认五分钟有效、一次性使用，因此当前只支持单实例部署；
+ * 有效期可用 {@code MINI_TICKET_SECONDS} 调整，便于开发者预览码在上传较慢时仍可使用。
  * 二维码由微信接口生成；若平台拒绝（例如个人主体未通过验证），接口仍返回 ticket 与原因，
  * 页面可以改用开发者工具预览码完成联调，而不是把失败伪装成成功。
  */
@@ -30,12 +32,12 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/auth/wechat/mini")
 public class MiniWechatController {
     private static final int TICKET_LIMIT = 1000;
-    private static final long TICKET_TTL_SECONDS = 300;
 
     private final SecureRandom random = new SecureRandom();
     private final MiniWechatClient client;
     private final IdentityService identity;
     private final SessionLogin login;
+    private final long ticketTtlSeconds;
     private final Map<String, Ticket> tickets = new ConcurrentHashMap<>();
 
     private record Ticket(String sessionId, UUID userId, Instant expires, String pairing, String openId) {
@@ -44,10 +46,12 @@ public class MiniWechatController {
         }
     }
 
-    public MiniWechatController(MiniWechatClient client, IdentityService identity, SessionLogin login) {
+    public MiniWechatController(MiniWechatClient client, IdentityService identity, SessionLogin login,
+                                @Value("${MINI_TICKET_SECONDS:300}") long ticketTtlSeconds) {
         this.client = client;
         this.identity = identity;
         this.login = login;
+        this.ticketTtlSeconds = ticketTtlSeconds < 60 ? 60 : ticketTtlSeconds;
     }
 
     @GetMapping("/status")
@@ -85,7 +89,7 @@ public class MiniWechatController {
             // 平台拒绝生码时保留原因，页面据此改用开发者工具预览码或配对码联调
             warning = error.getReason();
         }
-        tickets.put(ticket, new Ticket(sessionId, userId, Instant.now().plusSeconds(TICKET_TTL_SECONDS), pairing, null));
+        tickets.put(ticket, new Ticket(sessionId, userId, Instant.now().plusSeconds(ticketTtlSeconds), pairing, null));
 
         Map<String, String> result = new HashMap<>();
         result.put("ticket", ticket);
@@ -115,22 +119,27 @@ public class MiniWechatController {
         }
     }
 
-    /** 原浏览器轮询：未确认返回 pending，确认后建立会话或完成绑定并删除 ticket。 */
+    /**
+     * 原浏览器轮询：未确认返回 pending，确认后建立会话或完成绑定并删除 ticket。
+     *
+     * <p>ticket 本身是 256 位不可猜测的一次性凭证，只在发起请求的浏览器里出现；
+     * 绑定请求另外要求仍登录为发起绑定的账号。登录请求不额外绑定会话，
+     * 这样刷新页面或换标签页后仍能完成登录，同时不降低 ticket 的不可伪造性。
+     */
     @PostMapping("/consume")
     public synchronized Map<String, Object> consume(@RequestBody(required = false) ConsumeRequest body,
                                                     HttpServletRequest request, HttpServletResponse response) {
         Ticket ticket = valid(body == null ? null : body.ticket());
-        if (request.getSession(false) == null || !ticket.sessionId().equals(request.getSession(false).getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "该请求不属于当前会话");
-        }
-        if (ticket.openId() == null) return Map.of("status", "pending");
-        tickets.remove(body.ticket());
-        UserAccount account;
+        UserAccount account = null;
         if (ticket.userId() != null) {
             account = identity.currentUser();
             if (!account.id().equals(ticket.userId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "该请求不属于当前账号");
             }
+        }
+        if (ticket.openId() == null) return Map.of("status", "pending");
+        tickets.remove(body.ticket());
+        if (ticket.userId() != null) {
             identity.bindWechat(account.id(), client.appId, ticket.openId());
             account = identity.currentUser();
         } else {
