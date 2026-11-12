@@ -45,7 +45,7 @@ async function start() {
     <template v-else-if="ticket">
       <p class="error" role="alert">微信未返回小程序码：{{ warning || '接口不可用' }}。改用配对码完成确认。</p>
       <p class="pairing-code">{{ pairing }}</p>
-      <p class="small-note">用手机扫描开发者工具的预览码（小程序确认页），输入上面的十二位配对码并点“确认微信身份”。本页面会继续等待结果，五分钟内有效。预览码只对已获授权的开发者/体验成员有效，不等同于正式发布。</p>
+      <p class="small-note">用手机扫描开发者工具的预览码（小程序确认页），输入上面的十二位配对码并点“确认微信身份”。本页面会继续等待结果，有效期以服务端配置为准（默认五分钟）。预览码只对已获授权的开发者/体验成员有效，不等同于正式发布。</p>
       <dl class="details">
         <div><dt>配对码</dt><dd class="mono">{{ pairing }}</dd></div>
         <div><dt>请求标识</dt><dd class="mono">{{ ticket }}</dd></div>
